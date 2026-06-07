@@ -1,496 +1,1265 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>捨てメアド Inbox Pro</title>
-    
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f6f8fa; color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>チャット＆ビデオ通話アプリ</title>
+<script src="https://meet.jit.si/external_api.js"></script>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; margin: 0; overflow: hidden; }
+.app-container { width: 100%; max-width: 500px; height: 100%; height: 100dvh; background-color: #fff; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+@media (min-width: 501px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); } }
+.screen { display: none; flex-direction: column; height: 100%; flex: 1; overflow: hidden; }
+.screen.active { display: flex; }
+.header { background-color: #075e54; color: white; padding: 12px 15px; text-align: center; font-size: 17px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; z-index: 5; height: 55px; flex-shrink: 0; }
+.weather-widget { font-size: 12px; font-weight: normal; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 3px; }
+.content-area { padding: 20px 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+.section-box { width: 100%; background: #f9f9f9; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 5px; }
+.input-label { text-align: left; font-size: 13px; color: #333; font-weight: bold; margin-bottom: 5px; width: 90%; margin-left: auto; margin-right: auto; }
+.text-input { padding: 12px; width: 90%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; margin-bottom: 12px; box-sizing: border-box; }
+.action-btn { background-color: #128C7E; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 90%; transition: background-color 0.2s; }
+.action-btn:hover { background-color: #0b7366; }
+.global-btn { background-color: #e67e22; }
+.btn-google { background-color: #4285F4; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-google:hover { background-color: #3367D6; }
+.error-display { display: none; background-color: #fff0f0; border: 2px solid #e74c3c; color: #c0392b; padding: 15px; border-radius: 8px; font-size: 13px; text-align: left; width: 90%; margin: 10px auto 0 auto; word-break: break-all; line-height: 1.5; }
+.my-profile-display { background-color: #e5ddd5; padding: 15px 20px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; width: 90%; }
+.profile-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.profile-status { font-size: 13px; color: #555; margin-bottom: 12px; word-break: break-word; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; }
+.profile-id { font-size: 13px; color: #666; }
+.edit-name-btn { background-color: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: bold; margin: 3px 0; width: 100%; max-width: 220px; }
+.chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
+.profile-icon-large { width: 75px; height: 75px; font-size: 35px; margin: 0 auto 10px auto; cursor: pointer; transition: opacity 0.2s; }
+.header-btn-wrapper { position: relative; display: inline-block; }
+.badge { background-color: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: 0px; right: -5px; display: none; font-weight: bold;}
+.friend-item { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; cursor: pointer; border: 1px solid #eee;}
+.friend-info { display: flex; align-items: center; gap: 12px; }
+.friend-id { font-size: 16px; font-weight: bold; color: #333; text-align: left; line-height: 1.3; }
+.delete-btn { background-color: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;}
+.unread { background-color: #e6f2ff !important; border-color: #b3d7ff; font-weight: bold; }
+.unread-dot { color: #e74c3c; font-size: 12px; }
+.notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 85%; text-align: center; font-size: 15px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 1000; }
+.notification.show { top: 20px; }
+.messages { flex: 1; padding: 15px; overflow-y: auto; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); background-color: #e5ddd5; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+.msg-row { display: flex; align-items: flex-start; gap: 8px; width: 100%; margin-bottom: 2px; }
+.msg-row.mine { flex-direction: row-reverse; }
+.msg-wrapper { display: flex; flex-direction: column; max-width: 75%; }
+.msg-wrapper.mine { align-items: flex-end; }
+.sender-name { font-size: 11px; color: #666; margin-bottom: 3px; margin-left: 3px; margin-right: 3px; font-weight: bold; }
+.msg { padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
+.msg.my-msg { background-color: #dcf8c6; border-top-right-radius: 0; }
+.msg.bot-msg { background-color: #fff; border-top-left-radius: 0; }
+.msg a { color: #0066cc; text-decoration: underline; }
+.msg img.chat-image { max-width: 100%; max-height: 200px; border-radius: 8px; object-fit: contain; margin-top: 5px; }
+.msg-time { font-size: 10px; color: #888; text-align: right; margin-top: 4px; }
+.chat-input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 8px; flex-shrink: 0; height: 60px; }
+#imageSendBtn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 5px; }
+#chatTextInput { flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 16px; background: #fff; height: 40px; }
+#sendBtn { background-color: #128C7E; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: bold; height: 40px; display: flex; align-items: center; justify-content: center; }
+.back-btn { background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 5px; }
+.header-icon-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 8px; padding: 5px; }
+#onlineCountDisplay { font-size: 12px; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 12px; margin-left: 5px; cursor: pointer; display: none; }
+#onlineMembersList { display: none; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; max-height: 100px; overflow-y: auto; gap: 8px; flex-wrap: wrap; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0; }
+.member-badge { display: inline-flex; align-items: center; background: #f1f1f1; padding: 4px 8px; border-radius: 20px; border: 1px solid #ddd; font-size: 13px; color: #333; }
+.link-btn { display: inline-block; background-color: #34495e; margin-top: 10px; text-align: center; }
+.call-theme { background-color: #2c3e50; color: white; justify-content: space-between; padding-bottom: 20px; }
+.video-container { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 10px; padding: 10px; position: relative; overflow: hidden; }
+.videos-wrapper { display: flex; flex-direction: column; width: 100%; height: 100%; gap: 10px; flex: 1; }
+.video-box { width: 100%; height: 48%; background-color: #000; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #555; }
+.video-box video { width: 100%; height: 100%; object-fit: cover; }
+.video-box.mine video { transform: scaleX(-1); }
+.video-box.mine.sharing video { transform: none; }
+.video-label { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 5px; font-size: 12px; z-index: 2; }
+.call-controls { display: flex; gap: 15px; justify-content: center; width: 100%; padding: 10px 0; flex-shrink: 0; }
+.call-btn-circle { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; font-size: 22px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background-color: #34495e; }
+.call-btn-circle.off { background-color: #e67e22; }
+.btn-red { background-color: #e74c3c; }
+.incoming-call-alert { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: #f39c12; color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 2000; text-align: center; display: none; flex-direction: column; gap: 12px; font-size: 16px; font-weight: bold; width: 90%; }
+.incoming-btns { display: flex; gap: 12px; justify-content: center; }
+.inc-btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; flex: 1; }
+.btn-answer { background: #27ae60; }
+.btn-reject { background: #c0392b; }
+.qr-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 3000; text-align: center; display: none; flex-direction: column; gap: 12px; color: #333; font-weight: bold; width: 85%; max-width: 300px; }
+#qrImage { margin: 0 auto; display: block; width: 180px; height: 180px; border-radius: 8px; border: 1px solid #ccc; }
+#jitsiContainer { flex: 1; width: 100%; background: #000; }
+select.text-input { appearance: auto; }
 
-        .icon { width: 1.1em; height: 1.1em; vertical-align: -0.2em; margin-right: 4px; display: inline-block; }
-        .icon-large { width: 48px; height: 48px; color: #d1d5da; margin-bottom: 10px; }
+/* ===== つながる機能 ===== */
+.hobby-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.hobby-tag { padding: 6px 12px; border-radius: 20px; border: 1.5px solid #128C7E; background: #fff; color: #128C7E; font-size: 13px; cursor: pointer; transition: all 0.15s; user-select: none; }
+.hobby-tag.selected { background: #128C7E; color: #fff; }
+.connect-user-item { background: #f9f9f9; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; border: 1px solid #eee; }
+.connect-user-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.connect-user-detail { min-width: 0; flex: 1; }
+.connect-user-name { font-size: 15px; font-weight: bold; color: #333; }
+.connect-user-meta { font-size: 11px; color: #888; margin-top: 2px; }
+.connect-add-btn { background: #27ae60; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.connect-add-btn:disabled { background: #bdc3c7; cursor: default; }
 
-        header { background-color: #ffffff; padding: 15px 20px; border-bottom: 1px solid #e1e4e8; display: flex; align-items: center; justify-content: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); z-index: 10; flex-wrap: wrap; }
-        .app-title { font-size: 1.2rem; font-weight: bold; color: #2c3e50; margin-right: 10px; display: flex; align-items: center; }
-        .app-title .icon { color: #0366d6; margin-right: 8px; }
-        
-        .pwd-input { padding: 9px; font-size: 14px; border-radius: 6px; border: 1px solid #d1d5da; width: 120px; outline: none; transition: border-color 0.2s; }
-        .pwd-input:focus { border-color: #0366d6; }
-        
-        button { display: flex; align-items: center; justify-content: center; background-color: #2ea44f; color: white; border: none; padding: 10px 16px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
-        button:hover { background-color: #2c974b; }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
-        
-        .btn-refresh { background-color: #0366d6; }
-        .btn-refresh:hover { background-color: #005cc5; }
-        .btn-compose { background-color: #f66a0a; margin-left: auto; }
-        .btn-compose:hover { background-color: #d65905; }
-        .btn-translate { background-color: #6f42c1; padding: 6px 12px; font-size: 12px; margin-left: 10px; }
-        .btn-translate:hover { background-color: #5a32a3; }
-
-        .btn-back-mobile { display: none; background-color: #e1e4e8; color: #24292e; margin-bottom: 15px; width: fit-content; }
-        .btn-back-mobile:hover { background-color: #d1d5da; }
-
-        select { padding: 9px; font-size: 14px; border-radius: 6px; border: 1px solid #d1d5da; background-color: #fafbfc; cursor: pointer; outline: none; }
-        .error-msg { color: #d73a49; font-size: 13px; font-weight: bold; width: 100%; display: flex; align-items: center; }
-
-        .account-info { display: flex; flex-direction: column; gap: 4px; }
-        .email-display { background: #e6ffed; border: 1px solid #acf2bd; color: #22863a; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 15px; user-select: all; }
-        .pwd-display { font-size: 12px; color: #586069; font-weight: normal; user-select: all; display: flex; align-items: center;}
-
-        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
-
-        .sidebar { width: 320px; background-color: #ffffff; border-right: 1px solid #e1e4e8; overflow-y: auto; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-header { padding: 15px; background-color: #fafbfc; border-bottom: 1px solid #e1e4e8; }
-        .sidebar-header-title { font-size: 13px; color: #586069; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between;}
-        
-        .search-input { width: 100%; padding: 8px 10px 8px 30px; font-size: 13px; border-radius: 6px; border: 1px solid #d1d5da; outline: none; background-color: #fff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23586069' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 8px center; background-size: 14px; }
-        .search-input:focus { border-color: #0366d6; box-shadow: 0 0 0 3px rgba(3,102,214,0.3); }
-
-        .mail-item { padding: 15px; border-bottom: 1px solid #e1e4e8; cursor: pointer; transition: background 0.1s; }
-        .mail-item:hover { background-color: #f6f8fa; }
-        .mail-item.selected { background-color: #e6ffed; border-left: 4px solid #2ea44f; padding-left: 11px; }
-        .mail-sender { font-weight: bold; font-size: 14px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mail-subject { font-size: 13px; color: #586069; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mail-date { font-size: 11px; color: #6a737d; text-align: right; }
-
-        .content { flex: 1; background-color: #ffffff; overflow-y: auto; padding: 30px; position: relative; }
-        .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #6a737d; font-size: 16px; flex-direction: column; gap: 10px; }
-        .reader-header { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e1e4e8; }
-        .reader-subject { font-size: 20px; margin-bottom: 15px; color: #24292e; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .reader-info { font-size: 14px; color: #586069; line-height: 1.6; word-break: break-all; }
-        .reader-body { font-size: 15px; color: #24292e; line-height: 1.6; white-space: pre-wrap; background: #f9f9f9; padding: 20px; border-radius: 8px; overflow-wrap: break-word; }
-        
-        .translated-box { margin-top: 20px; background: #f0f7ff; border: 1px solid #c8e1ff; padding: 20px; border-radius: 8px; display: none; }
-        .translated-box h4 { color: #0366d6; margin-bottom: 10px; font-size: 14px; display: flex; align-items: center; }
-        
-        .status-text { font-size: 13px; color: #6a737d; font-weight: bold; display: flex; align-items: center; }
-
-        /* 送信フォームのスタイル */
-        .compose-form { max-width: 600px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; border: 1px solid #e1e4e8; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .compose-form h2 { font-size: 18px; margin-bottom: 20px; color: #24292e; display: flex; align-items: center; }
-        .compose-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #d1d5da; border-radius: 6px; font-size: 14px; outline: none; }
-        .compose-textarea { width: 100%; padding: 10px; height: 200px; margin-bottom: 15px; border: 1px solid #d1d5da; border-radius: 6px; font-size: 14px; outline: none; resize: vertical; }
-        .compose-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-        .compose-note { font-size: 12px; color: #6a737d; margin-top: 15px; line-height: 1.5; text-align: left; }
-
-        @media (max-width: 768px) {
-            header { padding: 10px; gap: 8px; justify-content: space-between; }
-            .app-title { font-size: 1rem; width: 100%; margin-bottom: 5px; }
-            .pwd-input { width: 100px; padding: 8px; }
-            button { padding: 8px 10px; font-size: 12px; }
-            .btn-compose { margin-left: 0; width: 100%; justify-content: center; margin-top: 5px; }
-            .email-display { font-size: 13px; padding: 6px; }
-            .content { padding: 15px; }
-            .sidebar { width: 100%; border-right: none; }
-            .content { display: none; width: 100%; }
-            .main-container.reading .sidebar { display: none; }
-            .main-container.reading .content { display: block; }
-            .btn-back-mobile { display: flex; }
-            .compose-form { padding: 15px; }
-        }
-    </style>
+/* ===== ニコニコ風コメント機能 ===== */
+#nicoContainer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; /* クリック操作の邪魔をしないようにする */
+  z-index: 9999;
+  overflow: hidden;
+}
+.nico-comment {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000;
+  left: 100%; /* 初期位置は画面の右外 */
+}
+@keyframes nicoFlow {
+  0% { left: 100%; transform: translateX(0); }
+  100% { left: 0; transform: translateX(-100%); }
+}
+</style>
 </head>
 <body>
+<div class="app-container" id="appContainer">
+<div id="nicoContainer"></div>
 
-<script>
-    const ICONS = {
-        mail: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
-        plus: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-        refresh: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`,
-        key: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>`,
-        globe: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
-        alert: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
-        emptyBox: `<svg class="icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`,
-        send: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
-        back: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`
-    };
-</script>
+<div id="notification" class="notification"></div>
 
-<header>
-    <div class="app-title">
-        <script>document.write(ICONS.mail);</script>
-        Inbox Pro
-    </div>
-    
-    <div style="display: flex; gap: 5px; align-items: center;">
-        <input type="text" id="pwdInput" class="pwd-input" placeholder="任意のパスワード" title="8文字以上推奨">
-        <button onclick="generateEmail()" id="genBtn">
-            <script>document.write(ICONS.plus);</script> メアド発行
-        </button>
-    </div>
-    
-    <select id="accountSelect" onchange="switchAccount()" style="display: none;">
-        <option value="">アカウントを選択...</option>
-    </select>
-
-    <div id="accountInfo" class="account-info" style="display: none;">
-        <div id="emailDisplay" class="email-display"></div>
-        <div id="pwdDisplay" class="pwd-display"></div>
-    </div>
-
-    <button onclick="checkInbox(true)" id="refreshBtn" class="btn-refresh" style="display: none;">
-        <script>document.write(ICONS.refresh);</script> 更新
-    </button>
-    <span id="statusText" class="status-text">待機中...</span>
-    
-    <button onclick="showComposeView()" class="btn-compose">
-        <script>document.write(ICONS.send);</script> メール作成
-    </button>
-</header>
-
-<div class="main-container" id="mainContainer">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-header-title">
-                <span>受信箱</span>
-                <span id="mailCount">(0)</span>
-            </div>
-            <input type="text" id="searchInput" class="search-input" placeholder="送信元・件名で検索..." oninput="renderMailList()">
-        </div>
-        <div id="mailList">
-            <div class="empty-state" style="font-size: 13px;">左上の「メアド発行」を押してください</div>
-        </div>
-    </aside>
-
-    <main class="content" id="mailContent">
-        <button class="btn-back-mobile" onclick="goBackToList()">
-            <script>document.write(ICONS.back);</script> 一覧に戻る
-        </button>
-
-        <div class="empty-state" id="emptyStateView">
-            <script>document.write(ICONS.emptyBox);</script>
-            <p>メールを選択してください</p>
-        </div>
-        
-        <div id="readerView" style="display: none;"></div>
-
-        <div id="composeView" class="compose-form" style="display: none;">
-            <h2><script>document.write(ICONS.send);</script> 新規作成・返信</h2>
-            
-            <input type="email" id="composeTo" class="compose-input" placeholder="宛先 (To)">
-            <input type="text" id="composeSubject" class="compose-input" placeholder="件名 (Subject)">
-            <textarea id="composeBody" class="compose-textarea" placeholder="ここに本文を入力してください..."></textarea>
-            
-            <div class="compose-actions">
-                <button onclick="hideComposeView()" style="background-color: #95a5a6; color: white;">キャンセル</button>
-                <button id="sendSubmitBtn" onclick="executeEmailJSSend()" style="background-color: #0366d6;">
-                    <script>document.write(ICONS.send);</script> 送信する
-                </button>
-            </div>
-            
-            <div class="compose-note">
-                ※Operaなどの外部アプリは立ち上がらず、この画面のまま送信されます。
-            </div>
-        </div>
-    </main>
+<div id="incomingCallAlert" class="incoming-call-alert">
+  <div>📞 <span id="incomingCallerName"></span>さんから着信中...</div>
+  <div class="incoming-btns">
+    <button id="answerCallBtn" class="inc-btn btn-answer">応答</button>
+    <button id="rejectCallBtn" class="inc-btn btn-reject">拒否</button>
+  </div>
 </div>
 
-<script>
-    // =========================================
-    // ★ ここにEmailJSの設定を入力してください ★
-    // =========================================
-    const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";   // 例: "aBcDeFgHiJkLmNoP"
-    const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";   // 例: "service_xxxxx"
-    const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; // 例: "template_xxxxx"
+<div id="friendRequestAlert" class="incoming-call-alert" style="background: #3498db;">
+  <div>🔔 <span id="requestSenderName"></span>さんから友達リクエスト！</div>
+  <div class="incoming-btns">
+    <button id="acceptReqBtn" class="inc-btn btn-answer">承認</button>
+    <button id="rejectReqBtn" class="inc-btn btn-reject">拒否</button>
+  </div>
+</div>
 
-    // EmailJSの初期化
-    (function(){
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-    })();
-    // =========================================
+<div id="qrModal" class="qr-modal">
+  <div id="qrModalTitle" style="font-size: 17px;">📱 QRコード</div>
+  <div id="qrModalDesc" style="font-size: 12px; color: #666; font-weight: normal;">読み取ってもらいます。</div>
+  <img id="qrImage" src="" alt="QR Code">
+  <button id="closeQrBtn" class="inc-btn btn-reject" style="width: 100%;">閉じる</button>
+</div>
 
-    const API_BASE = "https://api.mail.tm";
-    let currentEmail = "";
-    let authToken = "";
-    let checkInterval = null;
-    let emailsData = [];
-    
-    let savedAccounts = JSON.parse(localStorage.getItem('mailtm_accounts')) || [];
+<div id="loginScreen" class="screen active">
+  <div class="header">
+    <div id="weatherLogin" class="weather-widget">☁️ --℃</div>
+    <span>🔑 初期設定</span><div style="width: 50px;"></div>
+  </div>
+  <div class="content-area" style="justify-content: flex-start; padding-top: 10px;">
+    <div id="loginErrorArea" class="error-display"></div>
+    <div class="section-box" style="margin-bottom: 10px; border: 2px solid #128C7E;">
+      <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #128C7E;">まずはここから（設定不要！）</h3>
+      <p style="font-size: 11px; color: #666; margin-bottom: 10px;">エラーが出る場合は、こちらの「手動登録」ですぐにアプリを使えます。</p>
+      <div class="input-label" style="text-align:center;">アイコン</div>
+      <div id="iconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更" style="width:60px; height:60px; font-size:28px;">👤</div>
+      <input type="file" id="myIconUpload" accept="image/*" style="display: none;">
+      <input type="text" id="myNameInput" class="text-input" placeholder="表示名 (例: 太郎)" style="margin-bottom:8px;">
+      <input type="text" id="myStatusInput" class="text-input" placeholder="ひとこと" style="margin-bottom:8px;">
+      <input type="text" id="myIdInput" class="text-input" placeholder="ユーザーID (重複不可)" style="margin-bottom:8px;">
+      <button id="loginBtn" class="action-btn" style="margin-top: 5px;">登録してはじめる</button>
+    </div>
+    <div style="font-size: 13px; color: #666; text-align: center; font-weight: bold; margin-bottom: 5px; margin-top: 15px;">または</div>
+    <button id="googleLoginBtn" class="action-btn btn-google">G Googleアカウントでログイン</button>
+  </div>
+</div>
 
-    function generateRandomPassword() {
-        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let pwd = "";
-        for(let i=0; i<8; i++) { pwd += chars.charAt(Math.floor(Math.random() * chars.length)); }
-        return pwd;
-    }
+<div id="homeScreen" class="screen">
+  <div class="header">
+    <div id="weatherHome" class="weather-widget">☁️ --℃</div>
+    <span>🏠 ホーム</span>
+    <div class="header-btn-wrapper">
+      <button id="openNotificationsBtn" style="background:none; border:none; color:white; font-size:22px; cursor:pointer; padding: 0 5px;">🔔</button>
+      <span id="homeNotificationBadge" class="badge"></span>
+    </div>
+  </div>
+  <div class="content-area">
+    <div class="my-profile-display">
+      <div id="homeMyIcon" class="chat-icon profile-icon-large">👤</div>
+      <div class="profile-name"><span id="displayMyName"></span></div>
+      <div class="profile-status" id="displayMyStatus"></div>
+      <div style="margin-bottom: 8px;"><button id="openSettingsBtn" class="edit-name-btn">⚙️ プロフィール・設定</button></div>
+      <div style="margin-bottom: 8px;"><button id="showQrBtn" class="edit-name-btn" style="background-color: #27ae60;">📱 友達追加QRを表示</button></div>
+      <div class="profile-id">ID: <span id="displayMyId"></span></div>
+    </div>
 
-    window.onload = () => {
-        document.getElementById('pwdInput').value = generateRandomPassword();
-        updateAccountSelect();
-        if (savedAccounts.length > 0) {
-            document.getElementById('accountSelect').value = savedAccounts[0].token;
-            switchAccount();
-        }
+    <div class="section-box" style="border-left: 5px solid #e67e22;">
+      <h4 style="margin: 0 0 5px 0; text-align: left;">🌍 全体チャット</h4>
+      <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; text-align: left;">全員が参加できる公開ルームです</p>
+      <button id="globalChatBtn" class="action-btn global-btn">全体チャットに参加</button>
+    </div>
+
+    <div class="section-box" style="border-left: 5px solid #9b59b6;">
+      <h4 style="margin: 0 0 5px 0; text-align: left;">🎲 ランダムルーム</h4>
+      <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; text-align: left;">URLを知っている人だけが入れる部屋</p>
+      <button id="randomRoomBtn" class="action-btn" style="background-color: #9b59b6;">部屋を作って入室</button>
+    </div>
+
+    <div class="section-box" style="border-left: 5px solid #8e44ad;">
+      <h4 style="margin: 0 0 5px 0; text-align: left;">🔍 つながる</h4>
+      <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; text-align: left;">都道府県・趣味で同じ興味の人を探す</p>
+      <button id="openConnectBtn" class="action-btn" style="background-color: #8e44ad; width:100%;">つながる</button>
+    </div>
+
+    <div class="section-box" style="border-left: 5px solid #128C7E;">
+      <h4 style="margin: 0 0 5px 0; text-align: left;">👤 友達を追加する</h4>
+      <input type="text" id="friendIdInput" class="text-input" placeholder="相手のIDを入力" style="width:100%; margin-bottom:10px;">
+      <button id="addFriendBtn" class="action-btn" style="width:100%; margin-bottom:8px;">検索</button>
+      <div style="display: flex; gap: 8px; width: 100%;">
+        <button id="openFriendsBtn" class="action-btn link-btn" style="flex:1; margin-top:0; padding:10px 0; font-size:13px;">📋 友達リスト</button>
+        <div style="flex:1; position: relative;">
+          <button id="openRequestsBtn" class="action-btn link-btn" style="width: 100%; margin-top:0; padding:10px 0; font-size:13px; background-color: #e67e22;">💌 申請リスト</button>
+          <span id="requestNotificationBadge" class="badge" style="top: -5px; right: -5px;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="notificationScreen" class="screen">
+  <div class="header" style="background-color: #e67e22;">
+    <button id="backFromNotificationsBtn" class="back-btn">◀ 戻る</button>
+    <span>🔔 通知・メッセージ</span>
+    <div style="width: 50px;"></div>
+  </div>
+  <div class="content-area" id="notificationListArea" style="gap: 8px; justify-content: flex-start; align-items: stretch;"></div>
+</div>
+
+<div id="settingsScreen" class="screen">
+  <div class="header" style="background-color: #7f8c8d;">
+    <button id="backFromSettingsBtn" class="back-btn">◀ 戻る</button>
+    <span>⚙️ 設定</span>
+    <div style="width: 50px;"></div>
+  </div>
+  <div class="content-area">
+    <div class="section-box">
+      <h3 style="margin-top: 0;">プロフィール編集</h3>
+      <div class="input-label" style="text-align: center;">画像（タップで変更）</div>
+      <div id="settingsIconPreview" class="chat-icon profile-icon-large">👤</div>
+      <input type="file" id="settingsIconUpload" accept="image/*" style="display: none;">
+      <div class="input-label">表示名</div>
+      <input type="text" id="settingsNameInput" class="text-input" placeholder="名前">
+      <div class="input-label">ひとこと</div>
+      <input type="text" id="settingsStatusInput" class="text-input" placeholder="ステータスメッセージ">
+      <div class="input-label">都道府県</div>
+      <select id="settingsPrefInput" class="text-input" style="width:100%; margin-bottom:12px;">
+        <option value="">未設定</option>
+        <option>北海道</option><option>青森県</option><option>岩手県</option><option>宮城県</option><option>秋田県</option>
+        <option>山形県</option><option>福島県</option><option>茨城県</option><option>栃木県</option><option>群馬県</option>
+        <option>埼玉県</option><option>千葉県</option><option>東京都</option><option>神奈川県</option><option>新潟県</option>
+        <option>富山県</option><option>石川県</option><option>福井県</option><option>山梨県</option><option>長野県</option>
+        <option>岐阜県</option><option>静岡県</option><option>愛知県</option><option>三重県</option><option>滋賀県</option>
+        <option>京都府</option><option>大阪府</option><option>兵庫県</option><option>奈良県</option><option>和歌山県</option>
+        <option>鳥取県</option><option>島根県</option><option>岡山県</option><option>広島県</option><option>山口県</option>
+        <option>徳島県</option><option>香川県</option><option>愛媛県</option><option>高知県</option><option>福岡県</option>
+        <option>佐賀県</option><option>長崎県</option><option>熊本県</option><option>大分県</option><option>宮崎県</option>
+        <option>鹿児島県</option><option>沖縄県</option>
+      </select>
+      <div class="input-label">趣味タグ（複数選択OK）</div>
+      <div class="hobby-tags" id="settingsHobbyTags" style="margin-bottom:12px; justify-content: flex-start;">
+        <span class="hobby-tag" data-tag="アニメ">🎌 アニメ</span>
+        <span class="hobby-tag" data-tag="ゲーム">🎮 ゲーム</span>
+        <span class="hobby-tag" data-tag="音楽">🎵 音楽</span>
+        <span class="hobby-tag" data-tag="映画">🎬 映画</span>
+        <span class="hobby-tag" data-tag="読書">📚 読書</span>
+        <span class="hobby-tag" data-tag="スポーツ">⚽ スポーツ</span>
+        <span class="hobby-tag" data-tag="料理">🍳 料理</span>
+        <span class="hobby-tag" data-tag="旅行">✈️ 旅行</span>
+        <span class="hobby-tag" data-tag="写真">📷 写真</span>
+        <span class="hobby-tag" data-tag="イラスト">🎨 イラスト</span>
+        <span class="hobby-tag" data-tag="ファッション">👗 ファッション</span>
+        <span class="hobby-tag" data-tag="筋トレ">💪 筋トレ</span>
+        <span class="hobby-tag" data-tag="アウトドア">🏕️ アウトドア</span>
+        <span class="hobby-tag" data-tag="プログラミング">💻 プログラミング</span>
+        <span class="hobby-tag" data-tag="鉄道">🚃 鉄道</span>
+        <span class="hobby-tag" data-tag="猫">🐱 猫</span>
+        <span class="hobby-tag" data-tag="犬">🐶 犬</span>
+        <span class="hobby-tag" data-tag="声優">🎤 声優</span>
+      </div>
+      <button id="saveSettingsBtn" class="action-btn">保存する</button>
+    </div>
+    <div class="section-box">
+      <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 13px;">🔗 アカウント連携</h4>
+      <button id="settingsGoogleLoginBtn" class="action-btn btn-google" style="margin-bottom: 15px;">G Googleアカウントで連携</button>
+      <div id="settingsErrorArea" class="error-display" style="margin-bottom: 10px;"></div>
+      <button id="logoutBtn" class="action-btn" style="background-color: #e74c3c;">ログアウト</button>
+      <p style="font-size: 11px; color: #888; margin-top: 8px;">※端末内のデータがリセットされます</p>
+    </div>
+  </div>
+</div>
+
+<div id="userProfileScreen" class="screen">
+  <div class="header">
+    <button id="backFromUserProfileBtn" class="back-btn">◀ 戻る</button>
+    <span>プロフィール</span>
+    <div style="width: 50px;"></div>
+  </div>
+  <div class="content-area" style="justify-content: center;">
+    <div class="my-profile-display" style="padding: 25px 15px;">
+      <div id="targetUserIcon" class="chat-icon profile-icon-large" style="margin: 0 auto 10px auto;">👤</div>
+      <div class="profile-name"><span id="targetUserName"></span></div>
+      <div class="profile-status" id="targetUserStatus"></div>
+      <div id="targetUserPrefHobbies" style="margin-bottom:10px; font-size:13px; color:#666;"></div>
+      <div class="profile-id" style="margin-bottom: 15px;">ID: <span id="targetUserId"></span></div>
+      <button id="sendRequestBtn" class="action-btn" style="width:100%;">友達リクエストを送信</button>
+    </div>
+  </div>
+</div>
+
+<div id="friendsScreen" class="screen">
+  <div class="header" style="background-color: #34495e;">
+    <button id="backFromFriendsBtn" class="back-btn">◀ 戻る</button>
+    <span>📋 友達リスト</span>
+    <div style="width: 50px;"></div>
+  </div>
+  <div class="content-area" id="friendsListArea" style="align-items: stretch;"></div>
+</div>
+
+<div id="requestsScreen" class="screen">
+  <div class="header" style="background-color: #e67e22;">
+    <button id="backFromRequestsBtn" class="back-btn">◀ 戻る</button>
+    <span>💬 申請リスト</span>
+    <div style="width: 50px;"></div>
+  </div>
+  <div class="content-area" style="align-items: stretch; gap: 20px;">
+    <div class="section-box" style="border-left: 5px solid #3498db; padding: 10px;">
+      <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 14px;">📥 申請された（受信）</h4>
+      <div id="receivedRequestsArea" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+    <div class="section-box" style="border-left: 5px solid #95a5a6; padding: 10px;">
+      <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 14px;">📤 申請した（送信）</h4>
+      <div id="sentRequestsArea" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="connectScreen" class="screen">
+  <div class="header" style="background-color: #8e44ad;">
+    <button id="backFromConnectBtn" class="back-btn">◀ 戻る</button>
+    <span>🔍 つながる</span>
+    <div style="width:50px;"></div>
+  </div>
+  <div class="content-area" style="align-items: stretch; justify-content: flex-start;">
+    <div class="section-box">
+      <h4 style="margin: 0 0 10px 0; text-align:left;">絞り込み条件</h4>
+      <div class="input-label">都道府県</div>
+      <select id="connectPrefFilter" class="text-input" style="width:100%; margin-bottom:10px;">
+        <option value="">すべての都道府県</option>
+        <option>北海道</option><option>青森県</option><option>岩手県</option><option>宮城県</option><option>秋田県</option>
+        <option>山形県</option><option>福島県</option><option>茨城県</option><option>栃木県</option><option>群馬県</option>
+        <option>埼玉県</option><option>千葉県</option><option>東京都</option><option>神奈川県</option><option>新潟県</option>
+        <option>富山県</option><option>石川県</option><option>福井県</option><option>山梨県</option><option>長野県</option>
+        <option>岐阜県</option><option>静岡県</option><option>愛知県</option><option>三重県</option><option>滋賀県</option>
+        <option>京都府</option><option>大阪府</option><option>兵庫県</option><option>奈良県</option><option>和歌山県</option>
+        <option>鳥取県</option><option>島根県</option><option>岡山県</option><option>広島県</option><option>山口県</option>
+        <option>徳島県</option><option>香川県</option><option>愛媛県</option><option>高知県</option><option>福岡県</option>
+        <option>佐賀県</option><option>長崎県</option><option>熊本県</option><option>大分県</option><option>宮崎県</option>
+        <option>鹿児島県</option><option>沖縄県</option>
+      </select>
+      <div class="input-label">趣味タグ（複数選択OK・未選択は全員表示）</div>
+      <div class="hobby-tags" id="connectHobbyTags" style="justify-content: flex-start;">
+        <span class="hobby-tag" data-tag="アニメ">🎌 アニメ</span>
+        <span class="hobby-tag" data-tag="ゲーム">🎮 ゲーム</span>
+        <span class="hobby-tag" data-tag="音楽">🎵 音楽</span>
+        <span class="hobby-tag" data-tag="映画">🎬 映画</span>
+        <span class="hobby-tag" data-tag="読書">📚 読書</span>
+        <span class="hobby-tag" data-tag="スポーツ">⚽ スポーツ</span>
+        <span class="hobby-tag" data-tag="料理">🍳 料理</span>
+        <span class="hobby-tag" data-tag="旅行">✈️ 旅行</span>
+        <span class="hobby-tag" data-tag="写真">📷 写真</span>
+        <span class="hobby-tag" data-tag="イラスト">🎨 イラスト</span>
+        <span class="hobby-tag" data-tag="ファッション">👗 ファッション</span>
+        <span class="hobby-tag" data-tag="筋トレ">💪 筋トレ</span>
+        <span class="hobby-tag" data-tag="アウトドア">🏕️ アウトドア</span>
+        <span class="hobby-tag" data-tag="プログラミング">💻 プログラミング</span>
+        <span class="hobby-tag" data-tag="鉄道">🚃 鉄道</span>
+        <span class="hobby-tag" data-tag="猫">🐱 猫</span>
+        <span class="hobby-tag" data-tag="犬">🐶 犬</span>
+        <span class="hobby-tag" data-tag="声優">🎤 声優</span>
+      </div>
+      <button id="connectSearchBtn" class="action-btn" style="margin-top:12px; background-color: #8e44ad; width:100%;">🔍 この条件で探す</button>
+    </div>
+    <div id="connectResultArea" style="width:100%;"></div>
+  </div>
+</div>
+
+<div id="chatScreen" class="screen">
+  <div class="header">
+    <button id="backBtn" class="back-btn">◀ 戻る</button>
+    <div style="display: flex; flex-direction: column; align-items: center; max-width: 50%;">
+      <span id="chatTitle" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center;">チャット</span>
+      <span id="onlineCountDisplay">🟢 --人</span>
+    </div>
+    <div style="display: flex; align-items: center;">
+      <button id="toggleNicoBtn" class="header-icon-btn" title="ニコニコモード" style="opacity: 0.5;">📺</button>
+      <button id="toggleSearchBtn" class="header-icon-btn" title="検索">🔍</button>
+      <button id="shareRoomBtn" class="header-icon-btn" title="共有URLを表示">🔗</button>
+      <button id="startCallBtn" class="header-icon-btn" title="通話">📹</button>
+      <button id="startGlobalCallBtn" class="header-icon-btn" title="全体通話" style="display:none; font-size: 22px;">📞</button>
+    </div>
+  </div>
+  <div id="chatSearchArea" style="display:none; padding: 8px 10px; background: #fff; border-bottom: 1px solid #ddd; flex-shrink: 0;">
+    <input type="text" id="chatSearchInput" class="text-input" placeholder="メッセージを検索..." style="width:100%; margin:0; padding: 8px; font-size:14px;">
+  </div>
+  <div id="onlineMembersList"></div>
+  <div class="messages" id="msgArea"></div>
+  <div class="chat-input-area">
+    <button id="imageSendBtn" title="画像を送信">🖼️</button>
+    <input type="file" id="chatImageInput" accept="image/*,image/gif" style="display: none;">
+    <input type="text" id="chatTextInput" placeholder="メッセージを入力...">
+    <button id="sendBtn">送信</button>
+  </div>
+</div>
+
+<div id="inCallScreen" class="screen call-theme">
+  <div class="header" style="background: transparent;">
+    <span style="visibility: hidden;">◀</span>
+    <span id="inCallNameDisplay" style="font-size:20px;">相手の名前</span>
+    <span style="visibility: hidden;">📹</span>
+  </div>
+  <div class="video-container">
+    <div class="videos-wrapper">
+      <div class="video-box mine" id="localVideoBox">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <div class="video-label">あなた</div>
+      </div>
+      <div class="video-box">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-label" id="remoteVideoLabel">相手</div>
+      </div>
+    </div>
+    <div style="font-size: 15px; color: #bdc3c7; margin-top:5px;" id="callStatusText">接続中...</div>
+  </div>
+  <div class="call-controls">
+    <button id="toggleMicBtn" class="call-btn-circle">🎤</button>
+    <button id="toggleCamBtn" class="call-btn-circle">📷</button>
+    <button id="shareScreenBtn" class="call-btn-circle" style="background-color: #8e44ad; font-size:18px;">🖥️</button>
+    <button id="endCallBtn" class="call-btn-circle btn-red">☎</button>
+  </div>
+</div>
+
+<div id="globalCallScreen" class="screen call-theme">
+  <div id="jitsiContainer"></div>
+  <div style="padding: 10px; background: #2c3e50; text-align: center; flex-shrink: 0;">
+    <button id="endGlobalCallBtn" class="call-btn-circle btn-red" style="margin: 0 auto; width:50px; height:50px; font-size:20px;">☎</button>
+  </div>
+</div>
+
+</div><script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
+  authDomain: "sabopennet.firebaseapp.com",
+  projectId: "sabopennet",
+  storageBucket: "sabopennet.firebasestorage.app",
+  messagingSenderId: "284308308452",
+  appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let myName = '', myId = '', myIconData = '👤', myStatus = '', myPref = '', myHobbies = [];
+let tempIconData = '';
+let currentFriendId = '', chatMode = 'private', currentRoomId = '';
+let chatUnsubscribe = null, incomingCallUnsubscribe = null, onlineUnsubscribe = null, notificationUnsubscribe = null;
+let localStream = null, remoteStream = null, peerConnection = null, isScreenSharing = false, screenStream = null;
+const configuration = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+let jitsiApi = null;
+
+const screens = {
+  login: document.getElementById('loginScreen'),
+  home: document.getElementById('homeScreen'),
+  userProfile: document.getElementById('userProfileScreen'),
+  friends: document.getElementById('friendsScreen'),
+  chat: document.getElementById('chatScreen'),
+  call: document.getElementById('inCallScreen'),
+  globalCall: document.getElementById('globalCallScreen'),
+  settings: document.getElementById('settingsScreen'),
+  notifications: document.getElementById('notificationScreen'),
+  requests: document.getElementById('requestsScreen'),
+  connect: document.getElementById('connectScreen')
+};
+
+function showScreen(screenName) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[screenName].classList.add('active');
+  if (screenName === 'chat') { const msgArea = document.getElementById('msgArea'); msgArea.scrollTop = msgArea.scrollHeight; }
+}
+
+function getSafeData(key, def) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : def; } catch (e) { return def; } }
+
+function setIconDisplay(element, iconValue) {
+  if (iconValue && iconValue.startsWith('data:image')) { element.style.backgroundImage = `url(${iconValue})`; element.textContent = ''; }
+  else if (iconValue && iconValue.startsWith('http')) { element.style.backgroundImage = `url(${iconValue})`; element.textContent = ''; }
+  else { element.style.backgroundImage = 'none'; element.textContent = iconValue || '👤'; }
+}
+
+function processImage(file, callback) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const size = 120; canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      let min = Math.min(img.width, img.height);
+      let sx = (img.width - min) / 2; let sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      callback(canvas.toDataURL('image/jpeg', 0.8));
     };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
-    function updateAccountSelect() {
-        const select = document.getElementById('accountSelect');
-        if (savedAccounts.length === 0) { select.style.display = "none"; return; }
-        select.style.display = "block";
-        select.innerHTML = '';
-        savedAccounts.forEach((acc) => {
-            const option = document.createElement('option');
-            option.value = acc.token; option.text = acc.address;
-            select.appendChild(option);
-        });
+async function saveProfileToDB() {
+  if (!myId) return;
+  try {
+    await setDoc(doc(db, "users", myId), { name: myName, icon: myIconData, id: myId, status: myStatus, pref: myPref, hobbies: myHobbies }, { merge: true });
+  } catch (e) {}
+}
+
+// ===== 趣味タグ ユーティリティ =====
+function initHobbyTags(containerId) {
+  document.querySelectorAll(`#${containerId} .hobby-tag`).forEach(tag => {
+    tag.addEventListener('click', () => tag.classList.toggle('selected'));
+  });
+}
+function getSelectedTags(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} .hobby-tag.selected`)).map(t => t.dataset.tag);
+}
+function setSelectedTags(containerId, tags) {
+  document.querySelectorAll(`#${containerId} .hobby-tag`).forEach(tag => {
+    tag.classList.toggle('selected', tags.includes(tag.dataset.tag));
+  });
+}
+initHobbyTags('connectHobbyTags');
+initHobbyTags('settingsHobbyTags');
+
+// ===== ニコニコ風コメント機能 =====
+let nicoMode = false;
+
+document.getElementById('toggleNicoBtn').addEventListener('click', function() {
+  nicoMode = !nicoMode;
+  this.style.opacity = nicoMode ? '1' : '0.5';
+});
+
+function flowNicoComment(text) {
+  if (!text) return;
+  const container = document.getElementById('nicoContainer');
+  if (!container) return;
+  const span = document.createElement('span');
+  span.className = 'nico-comment';
+  span.textContent = text;
+  
+  // 高さをランダムに (画面の上から10%〜80%の位置)
+  span.style.top = Math.floor(Math.random() * 70 + 10) + '%';
+  
+  // 5〜8秒かけて流れるようにする
+  const duration = 5 + Math.random() * 3; 
+  span.style.animation = `nicoFlow ${duration}s linear forwards`;
+  
+  container.appendChild(span);
+  
+  // アニメーションが終わったら要素を削除してメモリを節約
+  setTimeout(() => {
+    if (span.parentNode) span.parentNode.removeChild(span);
+  }, duration * 1000);
+}
+
+// ===== Googleログイン =====
+async function handleGoogleLogin(isSettingScreen = false) {
+  const errorArea = isSettingScreen ? document.getElementById('settingsErrorArea') : document.getElementById('loginErrorArea');
+  errorArea.style.display = 'none'; errorArea.innerHTML = '';
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    myName = user.displayName || 'Googleユーザー';
+    myId = user.uid;
+    myIconData = user.photoURL || '👤';
+    myStatus = 'Googleでログイン中';
+    localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId);
+    localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus);
+    document.getElementById('displayMyName').textContent = myName;
+    document.getElementById('displayMyId').textContent = myId;
+    document.getElementById('displayMyStatus').textContent = myStatus;
+    setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+    document.getElementById('settingsNameInput').value = myName;
+    document.getElementById('settingsStatusInput').value = myStatus;
+    tempIconData = myIconData; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
+    await saveProfileToDB(); showScreen('home');
+    if (!incomingCallUnsubscribe) listenForIncomingCalls();
+    if (!notificationUnsubscribe) listenForNotifications();
+    listenForFriendRequests(); listenForAcceptedRequests();
+    if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
+    if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+    if (isSettingScreen) alert('Googleアカウントで連携しました！');
+  } catch (error) {
+    errorArea.style.display = 'block';
+    if (error.code === 'auth/configuration-not-found') {
+      errorArea.innerHTML = `<b>🚨【一番よくあるエラーです】</b><br><br><b>原因:</b><br>プログラムに書かれているプロジェクト（sabopennet）の中で、Googleログインが設定されていません。<br><br><b>直し方:</b><br>もしあなたが<b>新しくFirebaseのプロジェクトを作って設定した</b>のであれば、HTMLコード内にある <code>firebaseConfig</code> の部分（apiKey等）を、<b>ご自身が作った新しいプロジェクトのものに書き換えてください。</b><br><br>※エラーが直るまでは、上の「手動で登録」からすぐにはじめることができます！`;
+    } else if (error.code === 'auth/unauthorized-domain') {
+      errorArea.innerHTML = `<b>【ドメイン未許可エラー】</b><br>Firebase管理画面の「Authentication」＞「設定」＞「承認済みドメイン」に、現在のURLを追加してください。`;
+    } else if (error.code === 'auth/operation-not-allowed') {
+      errorArea.innerHTML = `<b>【未有効化エラー】</b><br>Firebaseの管理画面で「Googleログイン」がONになっていません。`;
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      errorArea.innerHTML = `<b>【キャンセル】</b><br>ログイン画面が途中で閉じられました。`;
+    } else {
+      errorArea.innerHTML = `<b>【エラーコード: ${error.code}】</b><br>${error.message}`;
     }
+  }
+}
 
-    function switchAccount() {
-        const select = document.getElementById('accountSelect');
-        authToken = select.value;
-        const selectedAcc = savedAccounts.find(a => a.token === authToken);
-        
-        if (selectedAcc) {
-            currentEmail = selectedAcc.address;
-            const savedPwd = selectedAcc.password || "不明（古いアカウント）";
-            
-            document.getElementById('accountInfo').style.display = "flex";
-            document.getElementById('emailDisplay').innerText = currentEmail;
-            document.getElementById('pwdDisplay').innerHTML = `${ICONS.key} PW: ${savedPwd}`;
-            document.getElementById('refreshBtn').style.display = "flex";
-            
-            document.getElementById('pwdInput').value = generateRandomPassword();
-            document.getElementById('searchInput').value = ''; 
-            
-            emailsData = [];
-            renderMailList();
-            showEmptyState();
-            
-            if(checkInterval) clearInterval(checkInterval);
-            checkInbox(true);
-            checkInterval = setInterval(checkInbox, 10000);
-        }
+document.getElementById('googleLoginBtn').addEventListener('click', () => handleGoogleLogin(false));
+document.getElementById('settingsGoogleLoginBtn').addEventListener('click', () => handleGoogleLogin(true));
+
+// ===== 手動ログイン =====
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  document.getElementById('loginErrorArea').style.display = 'none';
+  const n = document.getElementById('myNameInput').value.trim();
+  const id = document.getElementById('myIdInput').value.trim();
+  const s = document.getElementById('myStatusInput').value.trim();
+  if (!n || !id) return alert('表示名とIDを入力してください');
+  try {
+    const userDoc = await getDoc(doc(db, "users", id));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      myName = n; myId = data.id;
+      if (myIconData === '👤') myIconData = data.icon || '👤';
+      myStatus = s || data.status || '';
+      myPref = data.pref || '';
+      myHobbies = data.hobbies || [];
+      alert('既存のアカウントでログインしました！');
+    } else {
+      myName = n; myId = id; myStatus = s;
     }
+    localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId);
+    localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus);
+    localStorage.setItem('chatApp_MyPref', myPref); localStorage.setItem('chatApp_MyHobbies', JSON.stringify(myHobbies));
+    document.getElementById('displayMyName').textContent = myName;
+    document.getElementById('displayMyId').textContent = myId;
+    document.getElementById('displayMyStatus').textContent = myStatus;
+    setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+    await saveProfileToDB();
+    showScreen('home');
+    listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
+    if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
+    if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+  } catch (error) {
+    console.error("ログインエラー:", error);
+    alert('ログイン処理中にエラーが発生しました。');
+  }
+});
 
-    async function generateEmail() {
-        const btn = document.getElementById('genBtn');
-        const pwdInput = document.getElementById('pwdInput');
-        const errorDisplay = document.getElementById('errorDisplay');
-        
-        let password = pwdInput.value.trim();
-        if (password.length < 1) { password = generateRandomPassword(); pwdInput.value = password; }
+// ===== オンライン状態 =====
+async function setOnlineStatus(roomId) { if (!myId) return; try { await setDoc(doc(db, "online_users", myId), { roomId, name: myName, icon: myIconData, timestamp: Date.now(), id: myId }); } catch (e) {} }
+async function removeOnlineStatus() { if (!myId) return; try { await deleteDoc(doc(db, "online_users", myId)); } catch (e) {} }
 
-        btn.disabled = true; btn.innerHTML = `${ICONS.plus} 発行中...`; errorDisplay.innerHTML = "";
+function subscribeOnlineCount(roomId) {
+  if (onlineUnsubscribe) onlineUnsubscribe();
+  const q = query(collection(db, "online_users"), where("roomId", "==", roomId));
+  onlineUnsubscribe = onSnapshot(q, (snapshot) => {
+    const display = document.getElementById('onlineCountDisplay');
+    const listDiv = document.getElementById('onlineMembersList');
+    display.style.display = 'inline-block';
+    display.textContent = `🟢 ${snapshot.size}人`;
+    listDiv.innerHTML = '';
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const badge = document.createElement('div');
+      badge.className = 'member-badge';
+      if (docSnap.id !== myId) { badge.style.cursor = 'pointer'; badge.title = 'プロフィールを見る'; badge.onclick = () => { processUrlFriend(docSnap.id); }; }
+      const iconSpan = document.createElement('span');
+      iconSpan.style.cssText = 'width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background-size:cover;background-position:center;margin-right:5px;background-color:#bdc3c7;font-size:11px;';
+      if (data.icon && (data.icon.startsWith('data:') || data.icon.startsWith('http'))) { iconSpan.style.backgroundImage = `url(${data.icon})`; } else { iconSpan.textContent = data.icon || '👤'; }
+      const nameSpan = document.createElement('span');
+      nameSpan.style.fontWeight = 'bold'; nameSpan.textContent = data.name || '名無し';
+      badge.appendChild(iconSpan); badge.appendChild(nameSpan); listDiv.appendChild(badge);
+    });
+  });
+}
 
+document.getElementById('onlineCountDisplay').addEventListener('click', () => {
+  const listDiv = document.getElementById('onlineMembersList');
+  listDiv.style.display = listDiv.style.display === 'flex' ? 'none' : 'flex';
+});
+window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
+
+// ===== URL経由フレンド・ルーム =====
+async function processUrlFriend(fId) {
+  if (!fId) return;
+  if (fId === myId) return alert("自分のIDです");
+  const userDoc = await getDoc(doc(db, "users", fId));
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    document.getElementById('targetUserName').textContent = data.name;
+    document.getElementById('targetUserId').textContent = data.id;
+    document.getElementById('targetUserStatus').textContent = data.status || '（一言メッセージは未設定です）';
+    setIconDisplay(document.getElementById('targetUserIcon'), data.icon);
+    // 都道府県・趣味を表示
+    const prefHobbiesDiv = document.getElementById('targetUserPrefHobbies');
+    let phHtml = '';
+    if (data.pref) phHtml += `📍 ${data.pref} `;
+    if (data.hobbies && data.hobbies.length > 0) phHtml += data.hobbies.map(t => `<span style="background:#f0e6ff;color:#8e44ad;border-radius:10px;padding:2px 7px;font-size:11px;margin:2px;">${t}</span>`).join('');
+    prefHobbiesDiv.innerHTML = phHtml;
+    const btn = document.getElementById('sendRequestBtn');
+    let f = getSafeData('chatApp_Friends', []);
+    if (f.includes(fId)) {
+      btn.textContent = 'チャットを開く'; btn.style.backgroundColor = '#128C7E';
+      btn.onclick = () => { startPrivateChat(fId); window.history.replaceState({}, document.title, window.location.pathname); };
+    } else {
+      btn.textContent = '友達リクエストを送信'; btn.style.backgroundColor = '#27ae60';
+      btn.onclick = async () => {
         try {
-            const domainRes = await fetch(`${API_BASE}/domains`);
-            const domain = (await domainRes.json())['hydra:member'][0].domain;
-            const randomStr = Math.random().toString(36).substring(2, 12);
-            const address = `${randomStr}@${domain}`;
-
-            await fetch(`${API_BASE}/accounts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address, password }) });
-            const tokenRes = await fetch(`${API_BASE}/token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address, password }) });
-            const token = (await tokenRes.json()).token;
-
-            savedAccounts.unshift({ address, token, password });
-            localStorage.setItem('mailtm_accounts', JSON.stringify(savedAccounts));
-            
-            updateAccountSelect();
-            document.getElementById('accountSelect').value = token;
-            switchAccount();
-        } catch (error) {
-            errorDisplay.innerHTML = `${ICONS.alert} エラー: ${error.message}`;
-        } finally {
-            btn.disabled = false; btn.innerHTML = `${ICONS.plus} メアド発行`;
-        }
+          await addDoc(collection(db, "friend_requests"), { senderId: myId, senderName: myName, senderIcon: myIconData, receiverId: data.id, status: "pending", createdAt: Date.now() });
+          alert("友達リクエストを送信しました！"); showScreen('home');
+        } catch(e) { alert("送信に失敗しました。"); }
+      };
     }
+    showScreen('userProfile');
+  } else {
+    alert("ユーザーが見つかりません。"); showScreen('home');
+  }
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 
-    async function checkInbox(isManual = false) {
-        if (!authToken) return;
-        const statusText = document.getElementById('statusText');
-        statusText.innerHTML = `${ICONS.refresh} 確認中...`; statusText.style.color = "#0366d6";
+async function processUrlRoom(roomId) {
+  if (!roomId) return;
+  chatMode = (roomId === 'global_room') ? 'global' : 'group';
+  currentRoomId = roomId;
+  showScreen('chat');
+  document.getElementById('onlineMembersList').style.display = 'none';
+  if (roomId === 'global_room') document.getElementById('chatTitle').textContent = '🌍 全体チャット';
+  else document.getElementById('chatTitle').textContent = `🚪 ルーム: ${roomId}`;
+  document.getElementById('startCallBtn').style.display = 'none';
+  document.getElementById('startGlobalCallBtn').style.display = 'block';
+  subscribeToChatRoom(currentRoomId);
+  await setOnlineStatus(currentRoomId);
+  subscribeOnlineCount(currentRoomId);
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 
-        try {
-            const res = await fetch(`${API_BASE}/messages`, { headers: { 'Authorization': `Bearer ${authToken}` }, cache: 'no-store' });
-            const data = await res.json();
-            emailsData = data['hydra:member'];
-            renderMailList();
-
-            const timeStr = new Date().toLocaleTimeString();
-            statusText.innerHTML = `最終更新: ${timeStr} (自動)`; statusText.style.color = "#6a737d";
-        } catch (error) {
-            statusText.innerHTML = `${ICONS.alert} 通信エラー`; statusText.style.color = "#d73a49";
-        }
-    }
-
-    function renderMailList() {
-        const listDiv = document.getElementById('mailList');
-        const searchInput = document.getElementById('searchInput').value.toLowerCase();
-        
-        const filteredEmails = emailsData.filter(msg => {
-            const subject = (msg.subject || "").toLowerCase();
-            const senderName = (msg.from.name || "").toLowerCase();
-            const senderAddress = (msg.from.address || "").toLowerCase();
-            return subject.includes(searchInput) || senderName.includes(searchInput) || senderAddress.includes(searchInput);
-        });
-
-        document.getElementById('mailCount').innerText = `(${filteredEmails.length}件)`;
-
-        if (filteredEmails.length === 0) { 
-            listDiv.innerHTML = `<div class="empty-state" style="font-size:13px; padding: 20px; text-align: center;">${emailsData.length === 0 ? '新着メールはありません' : '一致するメールが見つかりません'}</div>`;
-            return; 
-        }
-
-        listDiv.innerHTML = '';
-        filteredEmails.forEach(msg => {
-            const item = document.createElement('div');
-            item.className = 'mail-item';
-            item.onclick = () => readMessage(msg.id, item);
-            const senderName = msg.from.name ? `${msg.from.name} <${msg.from.address}>` : msg.from.address;
-            item.innerHTML = `<div class="mail-sender">${senderName}</div><div class="mail-subject">${msg.subject || '(件名なし)'}</div><div class="mail-date">${new Date(msg.createdAt).toLocaleString()}</div>`;
-            listDiv.appendChild(item);
-        });
-    }
-
-    function setMobileReadingMode(isReading) {
-        const container = document.getElementById('mainContainer');
-        if(isReading) { container.classList.add('reading'); } 
-        else { container.classList.remove('reading'); }
-    }
-
-    function goBackToList() { showEmptyState(); }
-
-    function showEmptyState() {
-        setMobileReadingMode(false);
-        document.getElementById('emptyStateView').style.display = 'flex';
-        document.getElementById('readerView').style.display = 'none';
-        document.getElementById('composeView').style.display = 'none';
-        document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('selected'));
-    }
-
-    function showComposeView(replyTo = "", replySubject = "", replyBody = "") {
-        setMobileReadingMode(true);
-        document.getElementById('emptyStateView').style.display = 'none';
-        document.getElementById('readerView').style.display = 'none';
-        document.getElementById('composeView').style.display = 'block';
-        
-        document.getElementById('composeTo').value = replyTo;
-        document.getElementById('composeSubject').value = replySubject;
-        document.getElementById('composeBody').value = replyBody;
-    }
-
-    function hideComposeView() { goBackToList(); }
-
-    // ★ EmailJSによるバックグラウンド送信処理
-    function executeEmailJSSend() {
-        const to = document.getElementById('composeTo').value;
-        const subject = document.getElementById('composeSubject').value;
-        const body = document.getElementById('composeBody').value;
-        
-        if (!to) {
-            alert("宛先のメールアドレスを入力してください。");
-            return;
-        }
-
-        // キーが初期値のままの場合は警告
-        if (EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
-            alert("EmailJSの設定が完了していません。\nコード内の「YOUR_PUBLIC_KEY」などを実際のキーに書き換えてください。");
-            return;
-        }
-
-        const btnSubmit = document.getElementById('sendSubmitBtn');
-        const originalHtml = btnSubmit.innerHTML;
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = `${ICONS.refresh} 送信中...`;
-
-        // テンプレートに渡すパラメータ
-        const templateParams = {
-            to_email: to,
-            subject: subject,
-            message: body
+// ===== 友達リクエスト =====
+function listenForFriendRequests() {
+  const q = query(collection(db, "friend_requests"), where("receiverId", "==", myId));
+  onSnapshot(q, (snapshot) => {
+    const receivedArea = document.getElementById('receivedRequestsArea');
+    if (receivedArea) receivedArea.innerHTML = '';
+    let pendingCount = 0;
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === "added") {
+        const req = change.doc.data(); const reqId = change.doc.id;
+        if (req.status !== "pending") return;
+        document.getElementById('requestSenderName').textContent = req.senderName;
+        document.getElementById('friendRequestAlert').style.display = 'flex';
+        document.getElementById('acceptReqBtn').onclick = async () => {
+          document.getElementById('friendRequestAlert').style.display = 'none';
+          let f = getSafeData('chatApp_Friends', []);
+          if (!f.includes(req.senderId)) f.push(req.senderId);
+          localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+          await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" });
+          alert(`${req.senderName}さんと友達になりました！`);
         };
-
-        // Operaなどのアプリを起動せず、画面裏で直接送信
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-            .then(function(response) {
-                alert("メールの送信が完了しました！");
-                document.getElementById('composeTo').value = '';
-                document.getElementById('composeSubject').value = '';
-                document.getElementById('composeBody').value = '';
-                hideComposeView();
-            }, function(error) {
-                alert("送信に失敗しました: " + JSON.stringify(error));
-            })
-            .finally(function() {
-                btnSubmit.innerHTML = originalHtml;
-                btnSubmit.disabled = false;
-            });
-    }
-
-    async function readMessage(id, element) {
-        document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('selected'));
-        if (element) element.classList.add('selected');
-
-        setMobileReadingMode(true);
-        document.getElementById('emptyStateView').style.display = 'none';
-        document.getElementById('composeView').style.display = 'none';
-        const reader = document.getElementById('readerView');
-        reader.style.display = 'block';
-        reader.innerHTML = `<div class="empty-state">${ICONS.refresh} 読み込み中...</div>`;
-
-        try {
-            const res = await fetch(`${API_BASE}/messages/${id}`, { headers: { 'Authorization': `Bearer ${authToken}` }, cache: 'no-store' });
-            const detail = await res.json();
-            
-            const senderName = detail.from.name ? `${detail.from.name} &lt;${detail.from.address}&gt;` : detail.from.address;
-            const htmlBody = detail.html && detail.html.length > 0 ? detail.html[0] : '';
-            const textBody = detail.text || '(本文なし)';
-            const displayBody = htmlBody || `<div style="white-space: pre-wrap;">${textBody}</div>`;
-            const plainTextForTranslation = detail.text || "翻訳するテキストがありません。";
-            
-            const replySubject = detail.subject ? (detail.subject.startsWith('Re:') ? detail.subject : 'Re: ' + detail.subject) : 'Re:';
-            const replyBody = `\n\n--- 引用 ---\n${textBody}`;
-
-            reader.innerHTML = `
-                <div class="reader-header">
-                    <div class="reader-subject">
-                        ${detail.subject || '(件名なし)'}
-                        <div style="margin-top: 10px;">
-                            <button class="btn-translate" onclick="translateEmail(this, \`${encodeURIComponent(plainTextForTranslation)}\`)">${ICONS.globe} 日本語に翻訳</button>
-                            <button class="btn-compose" onclick="showComposeView('${detail.from.address}', '${replySubject.replace(/'/g, "\\'")}', \`${replyBody.replace(/`/g, "\\`")}\`)" style="margin-left: 10px; background-color: #0366d6;">${ICONS.send} 返信</button>
-                        </div>
-                    </div>
-                    <div class="reader-info">
-                        <strong>送信元:</strong> ${senderName}<br>
-                        <strong>宛先:</strong> ${currentEmail}<br>
-                        <strong>日時:</strong> ${new Date(detail.createdAt).toLocaleString()}
-                    </div>
-                </div>
-                <div class="reader-body">${displayBody}</div>
-                <div id="translatedBox" class="translated-box">
-                    <h4>${ICONS.globe} 翻訳結果</h4>
-                    <div id="translatedText" style="white-space: pre-wrap;"></div>
-                </div>
-            `;
-        } catch (error) {
-            reader.innerHTML = `<div class="empty-state" style="color: red;">${ICONS.alert} 読み込み失敗</div>`;
+        document.getElementById('rejectReqBtn').onclick = async () => {
+          document.getElementById('friendRequestAlert').style.display = 'none';
+          await deleteDoc(doc(db, "friend_requests", reqId));
+        };
+      }
+    });
+    snapshot.forEach(docSnap => {
+      const req = docSnap.data(); const reqId = docSnap.id;
+      if (req.status === "pending") {
+        pendingCount++;
+        if (receivedArea) {
+          const d = document.createElement('div'); d.className = 'friend-item';
+          d.innerHTML = `<div class="friend-info"><div class="chat-icon" style="${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? 'background-image:url('+req.senderIcon+');' : ''}">${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? '' : (req.senderIcon || '👤')}</div><div class="friend-id">${req.senderName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${req.senderId}</span></div></div><div style="display:flex;gap:5px;"><button class="inc-btn btn-answer" style="padding:6px 10px;font-size:12px;">承認</button><button class="inc-btn btn-reject" style="padding:6px 10px;font-size:12px;background:#e74c3c;">拒否</button></div>`;
+          d.querySelector('.btn-answer').onclick = async () => {
+            let f = getSafeData('chatApp_Friends', []);
+            if (!f.includes(req.senderId)) f.push(req.senderId);
+            localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+            await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" });
+            alert(`${req.senderName}さんと友達になりました！`);
+          };
+          d.querySelector('.btn-reject').onclick = async () => { if (confirm('この申請を拒否しますか？')) await deleteDoc(doc(db, "friend_requests", reqId)); };
+          receivedArea.appendChild(d);
         }
-    }
+      }
+    });
+    if (pendingCount === 0 && receivedArea) receivedArea.innerHTML = '<div style="font-size:12px;color:#666;">受信した申請はありません</div>';
+    const reqBadge = document.getElementById('requestNotificationBadge');
+    if (reqBadge) { if (pendingCount > 0) { reqBadge.style.display = 'inline-block'; reqBadge.textContent = pendingCount > 99 ? '99+' : pendingCount; } else { reqBadge.style.display = 'none'; } }
+  });
+}
 
-    async function translateEmail(btn, encodedText) {
-        btn.disabled = true; btn.innerHTML = `${ICONS.refresh} 翻訳中...`;
-        const box = document.getElementById('translatedBox');
-        const textBox = document.getElementById('translatedText');
-        box.style.display = "block"; textBox.innerText = "翻訳データを取得しています...";
+function listenForAcceptedRequests() {
+  const q = query(collection(db, "friend_requests"), where("senderId", "==", myId));
+  onSnapshot(q, (snapshot) => {
+    const sentArea = document.getElementById('sentRequestsArea');
+    if (sentArea) sentArea.innerHTML = '';
+    let pendingCount = 0;
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === "modified" || change.type === "added") {
+        const req = change.doc.data(); const reqId = change.doc.id;
+        if (req.status === "accepted") {
+          let f = getSafeData('chatApp_Friends', []);
+          if (!f.includes(req.receiverId)) f.push(req.receiverId);
+          localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+          alert(`友達リクエストが承認されました！`);
+          await deleteDoc(doc(db, "friend_requests", reqId));
+        }
+      }
+    });
+    snapshot.forEach(docSnap => {
+      const req = docSnap.data();
+      if (req.status === "pending") {
+        pendingCount++;
+        if (sentArea) {
+          const d = document.createElement('div'); d.className = 'friend-item';
+          d.innerHTML = `<div class="friend-info"><div class="chat-icon">👤</div><div class="friend-id" style="font-size:14px;">ID: ${req.receiverId}<br><span style="font-size:11px;color:#888;font-weight:normal;">承認待ち...</span></div></div><button class="delete-btn" style="background:#e74c3c;">取消</button>`;
+          d.querySelector('.delete-btn').onclick = async () => { if (confirm('申請を取り消しますか？')) await deleteDoc(doc(db, "friend_requests", docSnap.id)); };
+          sentArea.appendChild(d);
+        }
+      }
+    });
+    if (pendingCount === 0 && sentArea) sentArea.innerHTML = '<div style="font-size:12px;color:#666;">送信した申請はありません</div>';
+  });
+}
 
-        try {
-            const text = decodeURIComponent(encodedText).substring(0, 1000);
-            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|ja`);
-            const data = await res.json();
-            
-            if(data.responseData && data.responseData.translatedText) {
-                textBox.innerText = data.responseData.translatedText;
-                if(decodeURIComponent(encodedText).length > 1000) { textBox.innerText += "\n\n(※制限により、長文のため途中でカットされました)"; }
-            } else { textBox.innerText = "翻訳に失敗しました。"; }
-        } catch(e) { textBox.innerText = "通信エラーが発生しました。"; } 
-        finally { btn.innerHTML = `${ICONS.globe} 翻訳完了`; }
+// ===== 通知 =====
+function listenForNotifications() {
+  if (notificationUnsubscribe) notificationUnsubscribe();
+  const q = query(collection(db, "users", myId, "notifications"), orderBy("createdAt", "desc"));
+  notificationUnsubscribe = onSnapshot(q, (snapshot) => {
+    let unreadCount = 0;
+    const listArea = document.getElementById('notificationListArea');
+    listArea.innerHTML = '';
+    if (snapshot.empty) { listArea.innerHTML = '<div style="color:#666;margin-top:20px;text-align:center;">新着メッセージはありません</div>'; }
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (!data.read) unreadCount++;
+      const item = document.createElement('div');
+      item.className = `friend-item ${data.read ? '' : 'unread'}`;
+      const dateObj = new Date(data.createdAt);
+      const timeString = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+      item.innerHTML = `<div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:14px;font-weight:bold;color:#2c3e50;">${data.senderName}</span><span style="font-size:11px;color:#888;">${timeString}</span></div><div style="font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;">${data.text || '📷 画像が送信されました'}</div></div>${!data.read ? '<span class="unread-dot">🔴</span>' : ''}`;
+      item.onclick = async () => {
+        if (!data.read) { item.classList.remove('unread'); const dot = item.querySelector('.unread-dot'); if (dot) dot.remove(); try { await updateDoc(doc(db, "users", myId, "notifications", docSnap.id), { read: true }); } catch(e) {} }
+        if (data.type === 'message') { startPrivateChat(data.senderId); }
+      };
+      listArea.appendChild(item);
+    });
+    const badge = document.getElementById('homeNotificationBadge');
+    if (unreadCount > 0) { badge.style.display = 'inline-block'; badge.textContent = unreadCount > 99 ? '99+' : unreadCount; } else { badge.style.display = 'none'; }
+  });
+}
+
+document.getElementById('openNotificationsBtn').addEventListener('click', () => showScreen('notifications'));
+document.getElementById('backFromNotificationsBtn').addEventListener('click', () => showScreen('home'));
+
+// ===== 起動処理 =====
+window.onload = () => {
+  const params = new URLSearchParams(window.location.search);
+  const friendIdFromUrl = params.get('friend'); const roomFromUrl = params.get('room');
+  const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'),
+        sIcon = localStorage.getItem('chatApp_MyIcon'), sStatus = localStorage.getItem('chatApp_MyStatus'),
+        sPref = localStorage.getItem('chatApp_MyPref'), sHobbies = localStorage.getItem('chatApp_MyHobbies');
+  if (sName && sId) {
+    myName = sName; myId = sId; myIconData = sIcon || '👤'; myStatus = sStatus || '';
+    myPref = sPref || ''; myHobbies = sHobbies ? JSON.parse(sHobbies) : [];
+    document.getElementById('displayMyName').textContent = myName;
+    document.getElementById('displayMyId').textContent = myId;
+    document.getElementById('displayMyStatus').textContent = myStatus;
+    setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+    saveProfileToDB(); showScreen('home');
+    listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
+    if (friendIdFromUrl) processUrlFriend(friendIdFromUrl);
+    if (roomFromUrl) processUrlRoom(roomFromUrl);
+  } else {
+    if (friendIdFromUrl) window.pendingFriendId = friendIdFromUrl;
+    if (roomFromUrl) window.pendingRoomId = roomFromUrl;
+  }
+};
+
+// ===== 設定画面 =====
+document.getElementById('openSettingsBtn').addEventListener('click', () => {
+  document.getElementById('settingsNameInput').value = myName;
+  document.getElementById('settingsStatusInput').value = myStatus;
+  document.getElementById('settingsPrefInput').value = myPref || '';
+  setSelectedTags('settingsHobbyTags', myHobbies);
+  tempIconData = myIconData; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
+  showScreen('settings');
+});
+document.getElementById('backFromSettingsBtn').addEventListener('click', () => showScreen('home'));
+document.getElementById('settingsIconPreview').addEventListener('click', () => document.getElementById('settingsIconUpload').click());
+document.getElementById('settingsIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { tempIconData = dataUrl; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData); }); });
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const n = document.getElementById('settingsNameInput').value.trim();
+  const s = document.getElementById('settingsStatusInput').value.trim();
+  const p = document.getElementById('settingsPrefInput').value;
+  const h = getSelectedTags('settingsHobbyTags');
+  if (!n) return alert('表示名を入力してください');
+  myName = n; myStatus = s; myIconData = tempIconData; myPref = p; myHobbies = h;
+  localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyStatus', myStatus);
+  localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyPref', myPref);
+  localStorage.setItem('chatApp_MyHobbies', JSON.stringify(myHobbies));
+  document.getElementById('displayMyName').textContent = myName;
+  document.getElementById('displayMyStatus').textContent = myStatus;
+  setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+  await saveProfileToDB(); alert('設定を保存しました！'); showScreen('home');
+});
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (confirm('ログアウトしますか？')) { try { await signOut(auth); } catch(e) {} localStorage.clear(); location.reload(); }
+});
+
+// ===== QRコード =====
+document.getElementById('showQrBtn').addEventListener('click', () => {
+  const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
+  document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+  document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード';
+  document.getElementById('qrModalDesc').textContent = '相手のカメラで読み取ってもらうと、友達リクエストが送れます。';
+  document.getElementById('qrModal').style.display = 'flex';
+});
+document.getElementById('shareRoomBtn').addEventListener('click', () => {
+  let shareUrl = window.location.origin + window.location.pathname;
+  if (chatMode === 'private') {
+    shareUrl += '?friend=' + encodeURIComponent(myId);
+    document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード';
+    document.getElementById('qrModalDesc').textContent = '相手に読み取ってもらうと、友達リクエストが届きます。';
+  } else {
+    shareUrl += '?room=' + encodeURIComponent(currentRoomId);
+    document.getElementById('qrModalTitle').textContent = '🚪 ルーム共有QRコード';
+    document.getElementById('qrModalDesc').innerHTML = `リンクを共有するか、QRを読み取ると参加できます。<br><br><input type="text" value="${shareUrl}" style="width:100%;padding:5px;font-size:12px;" onclick="this.select();" readonly>`;
+  }
+  document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+  document.getElementById('qrModal').style.display = 'flex';
+});
+document.getElementById('closeQrBtn').addEventListener('click', () => { document.getElementById('qrModal').style.display = 'none'; });
+
+// ===== アイコンアップロード =====
+document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
+document.getElementById('myIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); }); });
+
+// ===== 友達検索・リスト =====
+document.getElementById('addFriendBtn').addEventListener('click', () => { const id = document.getElementById('friendIdInput').value.trim(); if (id) processUrlFriend(id); });
+document.getElementById('backFromUserProfileBtn').addEventListener('click', () => showScreen('home'));
+document.getElementById('globalChatBtn').addEventListener('click', () => processUrlRoom('global_room'));
+document.getElementById('randomRoomBtn').addEventListener('click', () => { const randomRoomId = Math.floor(100000 + Math.random() * 900000).toString(); processUrlRoom(randomRoomId); });
+
+function startPrivateChat(friendId) {
+  currentFriendId = friendId; chatMode = 'private';
+  currentRoomId = [myId, friendId].sort().join('_');
+  showScreen('chat');
+  document.getElementById('onlineMembersList').style.display = 'none';
+  document.getElementById('chatTitle').textContent = friendId;
+  document.getElementById('startCallBtn').style.display = 'block';
+  document.getElementById('startGlobalCallBtn').style.display = 'none';
+  subscribeToChatRoom(currentRoomId); setOnlineStatus(currentRoomId); subscribeOnlineCount(currentRoomId);
+}
+
+function subscribeToChatRoom(roomId) {
+  if (chatUnsubscribe) chatUnsubscribe();
+  document.getElementById('msgArea').innerHTML = '';
+  const q = query(collection(db, "rooms", roomId, "messages"), orderBy("createdAt"));
+  chatUnsubscribe = onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === "added") { const data = change.doc.data(); renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId, change.doc.id); }
+      if (change.type === "removed") { const el = document.getElementById(`msg-${change.doc.id}`); if (el) el.remove(); }
+    });
+  }, (error) => { console.error("チャット読み込みエラー:", error); });
+}
+
+function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId, messageId) {
+  const msgArea = document.getElementById('msgArea');
+  const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`; div.id = `msg-${messageId}`;
+  const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
+  if (!isMine && senderId) { iconDiv.style.cursor = 'pointer'; iconDiv.title = 'プロフィールを見る'; iconDiv.onclick = () => { processUrlFriend(senderId); }; }
+  const wrapper = document.createElement('div'); wrapper.className = `msg-wrapper ${isMine ? 'mine' : 'other'}`;
+  if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
+  const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`;
+  let textSpan = null;
+  if (text) {
+    textSpan = document.createElement('span');
+    const escapedText = text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
+    textSpan.innerHTML = escapedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    msgDiv.appendChild(textSpan);
+  }
+  if (imageUrl) { const img = document.createElement('img'); img.src = imageUrl; img.className = 'chat-image'; msgDiv.appendChild(img); }
+  if (createdAt) {
+    const dateObj = new Date(createdAt); const timeDiv = document.createElement('div'); timeDiv.className = 'msg-time';
+    timeDiv.textContent = `${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+    msgDiv.appendChild(timeDiv);
+  }
+  wrapper.appendChild(msgDiv);
+  const actionDiv = document.createElement('div');
+  actionDiv.style.cssText = `display:flex;gap:12px;margin-top:4px;font-size:12px;color:#888;justify-content:${isMine ? 'flex-end' : 'flex-start'};padding:0 5px;`;
+  if (text) { const copyBtn = document.createElement('span'); copyBtn.textContent = '📋 コピー'; copyBtn.style.cursor = 'pointer'; copyBtn.onclick = () => { navigator.clipboard.writeText(text).then(() => alert('コピーしました')).catch(() => alert('コピーに失敗しました')); }; actionDiv.appendChild(copyBtn); }
+  if (isMine) { const delBtn = document.createElement('span'); delBtn.textContent = '🗑️ 削除'; delBtn.style.cursor = 'pointer'; delBtn.style.color = '#e74c3c'; delBtn.onclick = async () => { if (confirm('メッセージを削除しますか？')) { await deleteDoc(doc(db, "rooms", currentRoomId, "messages", messageId)); } }; actionDiv.appendChild(delBtn); }
+  if (actionDiv.children.length > 0) wrapper.appendChild(actionDiv);
+  div.appendChild(iconDiv); div.appendChild(wrapper); msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
+
+  // ニコニコ風コメント表示
+  if (nicoMode && text) {
+    if (Date.now() - createdAt < 10000) {
+      flowNicoComment(text);
     }
+  }
+}
+
+document.getElementById('toggleSearchBtn').addEventListener('click', () => {
+  const searchArea = document.getElementById('chatSearchArea');
+  if (searchArea.style.display === 'none') { searchArea.style.display = 'block'; document.getElementById('chatSearchInput').focus(); }
+  else { searchArea.style.display = 'none'; document.getElementById('chatSearchInput').value = ''; filterMessages(''); }
+});
+document.getElementById('chatSearchInput').addEventListener('input', (e) => { filterMessages(e.target.value.toLowerCase()); });
+function filterMessages(keyword) {
+  const msgs = document.querySelectorAll('.msg-row');
+  msgs.forEach(row => { const textSpan = row.querySelector('.msg span'); if (textSpan) { row.style.display = textSpan.textContent.toLowerCase().includes(keyword) ? 'flex' : 'none'; } else { row.style.display = keyword ? 'none' : 'flex'; } });
+}
+
+document.getElementById('imageSendBtn').addEventListener('click', () => document.getElementById('chatImageInput').click());
+document.getElementById('chatImageInput').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  if (file.size > 800 * 1024) { alert("画像は800KB以下にしてください"); e.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = async function(event) {
+    const imageUrl = event.target.result;
+    try {
+      await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: "", imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+      if (chatMode === 'private') { const friendId = currentRoomId.replace(myId, '').replace('_', ''); await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: '📷 画像が送信されました', roomId: currentRoomId, createdAt: Date.now(), read: false }); }
+    } catch (error) {}
+  };
+  reader.readAsDataURL(file); e.target.value = '';
+});
+
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  const text = document.getElementById('chatTextInput').value.trim(); if (!text) return;
+  document.getElementById('chatTextInput').value = '';
+  try {
+    await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+    if (chatMode === 'private') { const friendId = currentRoomId.replace(myId, '').replace('_', ''); await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text, roomId: currentRoomId, createdAt: Date.now(), read: false }); }
+  } catch (e) {}
+});
+document.getElementById('chatTextInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) document.getElementById('sendBtn').click(); });
+document.getElementById('backBtn').addEventListener('click', () => { removeOnlineStatus(); if (onlineUnsubscribe) onlineUnsubscribe(); showScreen('home'); });
+
+document.getElementById('openFriendsBtn').addEventListener('click', async () => {
+  showScreen('friends');
+  const area = document.getElementById('friendsListArea'); area.innerHTML = '読み込み中...';
+  const friends = getSafeData('chatApp_Friends', []); area.innerHTML = '';
+  if (friends.length === 0) { area.innerHTML = '<div style="color:#666;margin-top:20px;">友達がいません</div>'; return; }
+  for (const f of friends) {
+    let fName = f, fIcon = '👤';
+    try { const userDoc = await getDoc(doc(db, "users", f)); if (userDoc.exists()) { fName = userDoc.data().name; fIcon = userDoc.data().icon; } } catch(e) {}
+    const d = document.createElement('div'); d.className = 'friend-item';
+    const bgStyle = fIcon.startsWith('data:') || fIcon.startsWith('http') ? `background-image:url(${fIcon});` : '';
+    const txt = fIcon.startsWith('data:') || fIcon.startsWith('http') ? '' : fIcon;
+    d.innerHTML = `<div class="friend-info"><div class="chat-icon" style="${bgStyle}">${txt}</div><div class="friend-id">${fName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${f}</span></div></div><button class="delete-btn">削除</button>`;
+    d.querySelector('.delete-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm(`${fName}さんを削除しますか？`)) {
+        let currentFriends = getSafeData('chatApp_Friends', []);
+        currentFriends = currentFriends.filter(id => id !== f);
+        localStorage.setItem('chatApp_Friends', JSON.stringify(currentFriends));
+        d.remove(); if (currentFriends.length === 0) area.innerHTML = '友達がいません';
+      }
+    });
+    d.onclick = () => startPrivateChat(f); area.appendChild(d);
+  }
+});
+document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
+document.getElementById('openRequestsBtn').addEventListener('click', () => showScreen('requests'));
+document.getElementById('backFromRequestsBtn').addEventListener('click', () => showScreen('home'));
+
+// ===== つながる機能 =====
+document.getElementById('openConnectBtn').addEventListener('click', () => showScreen('connect'));
+document.getElementById('backFromConnectBtn').addEventListener('click', () => showScreen('home'));
+
+document.getElementById('connectSearchBtn').addEventListener('click', async () => {
+  const pref = document.getElementById('connectPrefFilter').value;
+  const selectedTags = getSelectedTags('connectHobbyTags');
+  const resultArea = document.getElementById('connectResultArea');
+  resultArea.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">🔍 検索中...</div>';
+  try {
+    const snapshot = await getDocs(collection(db, "users"));
+    let users = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.id === myId) return;
+      if (pref && data.pref !== pref) return;
+      if (selectedTags.length > 0) {
+        const userHobbies = data.hobbies || [];
+        if (!selectedTags.some(t => userHobbies.includes(t))) return;
+      }
+      users.push(data);
+    });
+    resultArea.innerHTML = '';
+    if (users.length === 0) { resultArea.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">条件に合うユーザーが見つかりませんでした</div>'; return; }
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:13px;color:#666;margin-bottom:8px;font-weight:bold;';
+    header.textContent = `${users.length}人見つかりました`;
+    resultArea.appendChild(header);
+    const myFriends = getSafeData('chatApp_Friends', []);
+    users.forEach(user => {
+      const item = document.createElement('div'); item.className = 'connect-user-item';
+      const iconStyle = (user.icon && (user.icon.startsWith('data:') || user.icon.startsWith('http'))) ? `background-image:url(${user.icon});background-size:cover;background-position:center;` : '';
+      const iconText = (user.icon && (user.icon.startsWith('data:') || user.icon.startsWith('http'))) ? '' : (user.icon || '👤');
+      const tagsHtml = (user.hobbies || []).map(t => `<span style="background:#f0e6ff;color:#8e44ad;border-radius:10px;padding:2px 6px;font-size:10px;margin-right:3px;">${t}</span>`).join('');
+      const isFriend = myFriends.includes(user.id);
+      item.innerHTML = `
+        <div class="connect-user-info">
+          <div class="chat-icon" style="${iconStyle}">${iconText}</div>
+          <div class="connect-user-detail">
+            <div class="connect-user-name">${user.name || '名無し'}</div>
+            <div class="connect-user-meta">${user.pref ? '📍 ' + user.pref : ''}${user.status ? ' ' + user.status : ''}</div>
+            <div style="margin-top:3px;">${tagsHtml}</div>
+          </div>
+        </div>
+        <button class="connect-add-btn" ${isFriend ? 'disabled' : ''}>
+          ${isFriend ? '✅ 友達' : '追加'}
+        </button>`;
+      const btn = item.querySelector('.connect-add-btn');
+      if (!isFriend) {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true; btn.textContent = '送信中...';
+          try {
+            await addDoc(collection(db, "friend_requests"), { senderId: myId, senderName: myName, senderIcon: myIconData, receiverId: user.id, status: "pending", createdAt: Date.now() });
+            btn.textContent = '📨 送信済み'; btn.style.background = '#7f8c8d';
+          } catch(e) { btn.disabled = false; btn.textContent = '追加'; alert('送信に失敗しました'); }
+        });
+      }
+      // プロフィール表示（ボタン以外クリック）
+      item.querySelector('.connect-user-info').style.cursor = 'pointer';
+      item.querySelector('.connect-user-info').addEventListener('click', () => processUrlFriend(user.id));
+      resultArea.appendChild(item);
+    });
+  } catch(e) {
+    resultArea.innerHTML = '<div style="text-align:center;color:#e74c3c;padding:20px;">読み込みに失敗しました</div>';
+    console.error(e);
+  }
+});
+
+// ===== 通話 =====
+document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
+  showScreen('globalCall');
+  const domain = 'meet.jit.si';
+  const jitsiRoom = chatMode === 'global' ? 'Sabopennet_Global_Room' : `Sabopennet_Room_${currentRoomId}`;
+  const options = { roomName: jitsiRoom, parentNode: document.querySelector('#jitsiContainer'), userInfo: { displayName: myName }, configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true } };
+  jitsiApi = new JitsiMeetExternalAPI(domain, options);
+});
+document.getElementById('endGlobalCallBtn').addEventListener('click', () => { if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; } showScreen('chat'); });
+
+async function openUserMedia() {
+  try { localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); }
+  catch (error) { alert('カメラ・マイクの権限を許可してください'); throw error; }
+}
+
+function listenForIncomingCalls() {
+  if (incomingCallUnsubscribe) return;
+  const myCallRef = doc(db, "calls", myId);
+  incomingCallUnsubscribe = onSnapshot(myCallRef, (docSnap) => {
+    const data = docSnap.data();
+    if (data && data.offer && !data.answer) {
+      document.getElementById('incomingCallerName').textContent = data.callerName;
+      document.getElementById('incomingCallAlert').style.display = 'flex';
+      document.getElementById('answerCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; currentFriendId = data.callerId; currentRoomId = [myId, data.callerId].sort().join('_'); answerCall(myCallRef, data.offer); };
+      document.getElementById('rejectCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; deleteDoc(myCallRef); };
+    } else if (!data) { document.getElementById('incomingCallAlert').style.display = 'none'; if (screens.call.classList.contains('active')) hangUp(); }
+  });
+}
+
+document.getElementById('startCallBtn').addEventListener('click', async () => {
+  showScreen('call');
+  document.getElementById('inCallNameDisplay').textContent = currentFriendId;
+  document.getElementById('remoteVideoLabel').textContent = currentFriendId;
+  document.getElementById('callStatusText').textContent = '発信中...';
+  await openUserMedia();
+  peerConnection = new RTCPeerConnection(configuration);
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; };
+  const callDocRef = doc(db, "calls", currentFriendId);
+  peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "callerCandidates"), event.candidate.toJSON()); };
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+  await setDoc(callDocRef, { offer: { type: offer.type, sdp: offer.sdp }, callerId: myId, callerName: myName });
+  onSnapshot(callDocRef, (snapshot) => { const data = snapshot.data(); if (!peerConnection.currentRemoteDescription && data?.answer) { peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); document.getElementById('callStatusText').textContent = '通話中'; } });
+  onSnapshot(collection(callDocRef, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); });
+});
+
+async function answerCall(callDocRef, offerData) {
+  showScreen('call');
+  document.getElementById('inCallNameDisplay').textContent = currentFriendId;
+  document.getElementById('remoteVideoLabel').textContent = currentFriendId;
+  document.getElementById('callStatusText').textContent = '接続中...';
+  await openUserMedia();
+  peerConnection = new RTCPeerConnection(configuration);
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; };
+  peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "calleeCandidates"), event.candidate.toJSON()); };
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+  await updateDoc(callDocRef, { answer: { type: answer.type, sdp: answer.sdp } });
+  document.getElementById('callStatusText').textContent = '通話中';
+  onSnapshot(collection(callDocRef, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); });
+}
+
+document.getElementById('toggleMicBtn').addEventListener('click', function() { if (!localStream) return; const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); this.textContent = t.enabled ? '🎤' : '🔇'; });
+document.getElementById('toggleCamBtn').addEventListener('click', function() { if (!localStream) return; const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); });
+document.getElementById('shareScreenBtn').addEventListener('click', async function() {
+  if (!isScreenSharing) {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+      if (sender) sender.replaceTrack(screenTrack);
+      document.getElementById('localVideo').srcObject = screenStream;
+      document.getElementById('localVideoBox').classList.add('sharing');
+      isScreenSharing = true; this.style.backgroundColor = '#2ecc71';
+      screenTrack.onended = () => stopScreenSharing();
+    } catch (e) {}
+  } else { stopScreenSharing(); }
+});
+function stopScreenSharing() {
+  if (!isScreenSharing) return;
+  const videoTrack = localStream.getVideoTracks()[0];
+  const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+  if (sender) sender.replaceTrack(videoTrack);
+  document.getElementById('localVideo').srcObject = localStream;
+  document.getElementById('localVideoBox').classList.remove('sharing');
+  if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+  isScreenSharing = false; document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
+}
+async function hangUp() {
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(track => track.stop()); screenStream = null; }
+  document.getElementById('localVideo').srcObject = null;
+  document.getElementById('remoteVideo').srcObject = null;
+  if (myId && currentFriendId) { await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{}); }
+  showScreen('chat');
+  document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').textContent = '🎤';
+  document.getElementById('toggleCamBtn').classList.remove('off');
+  document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
+  isScreenSharing = false;
+}
+document.getElementById('endCallBtn').addEventListener('click', hangUp);
+
 </script>
-
 </body>
 </html>
