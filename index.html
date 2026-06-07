@@ -29,7 +29,6 @@
         .btn-translate { background-color: #6f42c1; padding: 6px 12px; font-size: 12px; margin-left: 10px; }
         .btn-translate:hover { background-color: #5a32a3; }
 
-        /* スマホ用「戻る」ボタン（PCでは非表示） */
         .btn-back-mobile { display: none; background-color: #e1e4e8; color: #24292e; margin-bottom: 15px; width: fit-content; }
         .btn-back-mobile:hover { background-color: #d1d5da; }
 
@@ -75,9 +74,6 @@
         .compose-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
         .compose-note { font-size: 12px; color: #6a737d; margin-top: 15px; line-height: 1.5; }
 
-        /* =========================================
-           スマホ対応（レスポンシブデザイン）
-        ========================================= */
         @media (max-width: 768px) {
             header { padding: 10px; gap: 8px; justify-content: space-between; }
             .app-title { font-size: 1rem; width: 100%; margin-bottom: 5px; }
@@ -86,16 +82,10 @@
             .btn-compose { margin-left: 0; width: 100%; justify-content: center; margin-top: 5px; }
             .email-display { font-size: 13px; padding: 6px; }
             .content { padding: 15px; }
-            
-            /* スマホでは「リスト」か「本文」のどちらか一方だけを表示する */
             .sidebar { width: 100%; border-right: none; }
             .content { display: none; width: 100%; }
-            
-            /* readingクラスが付与されたら本文を表示し、リストを隠す */
             .main-container.reading .sidebar { display: none; }
             .main-container.reading .content { display: block; }
-            
-            /* スマホ専用の「戻る」ボタンを表示 */
             .btn-back-mobile { display: flex; }
             .compose-form { padding: 15px; }
         }
@@ -184,13 +174,13 @@
             
             <div class="compose-actions">
                 <button onclick="hideComposeView()" style="background-color: #95a5a6; color: white;">キャンセル</button>
-                <button onclick="executeSendMail()" style="background-color: #0366d6;">
-                    <script>document.write(ICONS.send);</script> メールアプリで送信
+                <button id="sendSubmitBtn" onclick="executeSendMail()" style="background-color: #0366d6;">
+                    <script>document.write(ICONS.send);</script> 送信する
                 </button>
             </div>
             
             <div class="compose-note">
-                ※「送信」を押すと、入力内容を引き継いだ状態で、パソコンやスマホの標準メールアプリが起動します。
+                ※この機能は、裏側でPythonサーバー（localhost:5000）が起動している必要があります。
             </div>
         </div>
     </main>
@@ -340,7 +330,6 @@
         });
     }
 
-    // ★ スマホ表示切り替え用ロジック
     function setMobileReadingMode(isReading) {
         const container = document.getElementById('mainContainer');
         if(isReading) { container.classList.add('reading'); } 
@@ -370,13 +359,44 @@
 
     function hideComposeView() { goBackToList(); }
 
-    function executeSendMail() {
+    // ★ Pythonサーバーに送信をリクエストする関数
+    async function executeSendMail() {
         const to = document.getElementById('composeTo').value;
         const subject = document.getElementById('composeSubject').value;
         const body = document.getElementById('composeBody').value;
         
-        if (!to) { alert("宛先のメールアドレスを入力してください。"); return; }
-        window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        if (!to) {
+            alert("宛先のメールアドレスを入力してください。");
+            return;
+        }
+
+        const btnSubmit = document.getElementById('sendSubmitBtn');
+        const originalHtml = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `${ICONS.refresh} 送信中...`;
+
+        try {
+            // Pythonサーバー（localhost:5000）へ送信リクエスト
+            const response = await fetch('http://localhost:5000/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to, subject, body })
+            });
+            
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                alert("メールの送信が完了しました！");
+                hideComposeView(); 
+            } else {
+                alert("送信に失敗しました: " + result.error);
+            }
+        } catch (error) {
+            alert("通信エラーが発生しました。\n裏側でPythonサーバー（server.py）が起動しているか確認してください。");
+        } finally {
+            btnSubmit.innerHTML = originalHtml;
+            btnSubmit.disabled = false;
+        }
     }
 
     async function readMessage(id, element) {
