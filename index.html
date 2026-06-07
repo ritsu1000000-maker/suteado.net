@@ -1,456 +1,92 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>捨てメアド Inbox Pro (送受信・スマホ対応版)</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f6f8fa; color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        .icon { width: 1.1em; height: 1.1em; vertical-align: -0.2em; margin-right: 4px; display: inline-block; }
-        .icon-large { width: 48px; height: 48px; color: #d1d5da; margin-bottom: 10px; }
-
-        header { background-color: #ffffff; padding: 15px 20px; border-bottom: 1px solid #e1e4e8; display: flex; align-items: center; justify-content: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); z-index: 10; flex-wrap: wrap; }
-        .app-title { font-size: 1.2rem; font-weight: bold; color: #2c3e50; margin-right: 10px; display: flex; align-items: center; }
-        .app-title .icon { color: #0366d6; margin-right: 8px; }
-        
-        .pwd-input { padding: 9px; font-size: 14px; border-radius: 6px; border: 1px solid #d1d5da; width: 120px; outline: none; transition: border-color 0.2s; }
-        .pwd-input:focus { border-color: #0366d6; }
-        
-        button { display: flex; align-items: center; justify-content: center; background-color: #2ea44f; color: white; border: none; padding: 10px 16px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
-        button:hover { background-color: #2c974b; }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
-        
-        .btn-refresh { background-color: #0366d6; }
-        .btn-refresh:hover { background-color: #005cc5; }
-        .btn-compose { background-color: #f66a0a; margin-left: auto; }
-        .btn-compose:hover { background-color: #d65905; }
-        .btn-translate { background-color: #6f42c1; padding: 6px 12px; font-size: 12px; margin-left: 10px; }
-        .btn-translate:hover { background-color: #5a32a3; }
-
-        .btn-back-mobile { display: none; background-color: #e1e4e8; color: #24292e; margin-bottom: 15px; width: fit-content; }
-        .btn-back-mobile:hover { background-color: #d1d5da; }
-
-        select { padding: 9px; font-size: 14px; border-radius: 6px; border: 1px solid #d1d5da; background-color: #fafbfc; cursor: pointer; outline: none; }
-        .error-msg { color: #d73a49; font-size: 13px; font-weight: bold; width: 100%; display: flex; align-items: center; }
-
-        .account-info { display: flex; flex-direction: column; gap: 4px; }
-        .email-display { background: #e6ffed; border: 1px solid #acf2bd; color: #22863a; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 15px; user-select: all; }
-        .pwd-display { font-size: 12px; color: #586069; font-weight: normal; user-select: all; display: flex; align-items: center;}
-
-        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
-
-        .sidebar { width: 320px; background-color: #ffffff; border-right: 1px solid #e1e4e8; overflow-y: auto; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-header { padding: 15px; background-color: #fafbfc; border-bottom: 1px solid #e1e4e8; }
-        .sidebar-header-title { font-size: 13px; color: #586069; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between;}
-        
-        .search-input { width: 100%; padding: 8px 10px 8px 30px; font-size: 13px; border-radius: 6px; border: 1px solid #d1d5da; outline: none; background-color: #fff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23586069' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 8px center; background-size: 14px; }
-        .search-input:focus { border-color: #0366d6; box-shadow: 0 0 0 3px rgba(3,102,214,0.3); }
-
-        .mail-item { padding: 15px; border-bottom: 1px solid #e1e4e8; cursor: pointer; transition: background 0.1s; }
-        .mail-item:hover { background-color: #f6f8fa; }
-        .mail-item.selected { background-color: #e6ffed; border-left: 4px solid #2ea44f; padding-left: 11px; }
-        .mail-sender { font-weight: bold; font-size: 14px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mail-subject { font-size: 13px; color: #586069; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mail-date { font-size: 11px; color: #6a737d; text-align: right; }
-
-        .content { flex: 1; background-color: #ffffff; overflow-y: auto; padding: 30px; position: relative; }
-        .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #6a737d; font-size: 16px; flex-direction: column; gap: 10px; }
-        .reader-header { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e1e4e8; }
-        .reader-subject { font-size: 20px; margin-bottom: 15px; color: #24292e; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .reader-info { font-size: 14px; color: #586069; line-height: 1.6; word-break: break-all; }
-        .reader-body { font-size: 15px; color: #24292e; line-height: 1.6; white-space: pre-wrap; background: #f9f9f9; padding: 20px; border-radius: 8px; overflow-wrap: break-word; }
-        
-        .translated-box { margin-top: 20px; background: #f0f7ff; border: 1px solid #c8e1ff; padding: 20px; border-radius: 8px; display: none; }
-        .translated-box h4 { color: #0366d6; margin-bottom: 10px; font-size: 14px; display: flex; align-items: center; }
-        
-        .status-text { font-size: 13px; color: #6a737d; font-weight: bold; display: flex; align-items: center; }
-
-        /* 送信フォームのスタイル */
-        .compose-form { max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 25px; border-radius: 8px; border: 1px solid #e1e4e8; }
-        .compose-form h2 { font-size: 18px; margin-bottom: 20px; color: #24292e; display: flex; align-items: center; }
-        .compose-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #d1d5da; border-radius: 6px; font-size: 14px; outline: none; }
-        .compose-textarea { width: 100%; padding: 10px; height: 200px; margin-bottom: 15px; border: 1px solid #d1d5da; border-radius: 6px; font-size: 14px; outline: none; resize: vertical; }
-        .compose-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-        .compose-note { font-size: 12px; color: #6a737d; margin-top: 15px; line-height: 1.5; text-align: left; }
-
-        @media (max-width: 768px) {
-            header { padding: 10px; gap: 8px; justify-content: space-between; }
-            .app-title { font-size: 1rem; width: 100%; margin-bottom: 5px; }
-            .pwd-input { width: 100px; padding: 8px; }
-            button { padding: 8px 10px; font-size: 12px; }
-            .btn-compose { margin-left: 0; width: 100%; justify-content: center; margin-top: 5px; }
-            .email-display { font-size: 13px; padding: 6px; }
-            .content { padding: 15px; }
-            
-            .sidebar { width: 100%; border-right: none; }
-            .content { display: none; width: 100%; }
-            .main-container.reading .sidebar { display: none; }
-            .main-container.reading .content { display: block; }
-            
-            .btn-back-mobile { display: flex; }
-            .compose-form { padding: 15px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>お問い合わせフォーム</title>
+  
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 20px auto; padding: 10px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type="text"], input[type="email"], textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #cccccc; cursor: not-allowed; }
+  </style>
 </head>
 <body>
 
-<script>
-    const ICONS = {
-        mail: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
-        plus: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-        refresh: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`,
-        key: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>`,
-        globe: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
-        alert: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
-        emptyBox: `<svg class="icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`,
-        send: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
-        back: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`
-    };
-</script>
-
-<header>
-    <div class="app-title">
-        <script>document.write(ICONS.mail);</script>
-        Inbox Pro
-    </div>
-    
-    <div style="display: flex; gap: 5px; align-items: center;">
-        <input type="text" id="pwdInput" class="pwd-input" placeholder="任意のパスワード" title="8文字以上推奨">
-        <button onclick="generateEmail()" id="genBtn">
-            <script>document.write(ICONS.plus);</script> メアド発行
-        </button>
-    </div>
-    
-    <select id="accountSelect" onchange="switchAccount()" style="display: none;">
-        <option value="">アカウントを選択...</option>
-    </select>
-
-    <div id="accountInfo" class="account-info" style="display: none;">
-        <div id="emailDisplay" class="email-display"></div>
-        <div id="pwdDisplay" class="pwd-display"></div>
+  <h2>お問い合わせ</h2>
+  
+  <form id="contact-form">
+    <div class="form-group">
+      <label for="name">お名前</label>
+      <input type="text" id="name" name="name" required>
     </div>
 
-    <button onclick="checkInbox(true)" id="refreshBtn" class="btn-refresh" style="display: none;">
-        <script>document.write(ICONS.refresh);</script> 更新
-    </button>
-    <span id="statusText" class="status-text">待機中...</span>
-    
-    <button onclick="showComposeView()" class="btn-compose">
-        <script>document.write(ICONS.send);</script> メール作成
-    </button>
-</header>
+    <div class="form-group">
+      <label for="email">メールアドレス</label>
+      <input type="email" id="email" name="email" required>
+    </div>
 
-<div class="main-container" id="mainContainer">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-header-title">
-                <span>受信箱</span>
-                <span id="mailCount">(0)</span>
-            </div>
-            <input type="text" id="searchInput" class="search-input" placeholder="送信元・件名で検索..." oninput="renderMailList()">
-        </div>
-        <div id="mailList">
-            <div class="empty-state" style="font-size: 13px;">左上の「メアド発行」を押してください</div>
-        </div>
-    </aside>
+    <div class="form-group">
+      <label for="message">内容</label>
+      <textarea id="message" name="message" rows="5" required></textarea>
+    </div>
 
-    <main class="content" id="mailContent">
-        <button class="btn-back-mobile" onclick="goBackToList()">
-            <script>document.write(ICONS.back);</script> 一覧に戻る
-        </button>
+    <button type="submit" id="submit-btn">送信する</button>
+  </form>
 
-        <div class="empty-state" id="emptyStateView">
-            <script>document.write(ICONS.emptyBox);</script>
-            <p>メールを選択してください</p>
-        </div>
-        
-        <div id="readerView" style="display: none;"></div>
+  <script>
+    // =========================================
+    // ★ ここにEmailJSの設定を入力してください ★
+    // =========================================
+    const PUBLIC_KEY = "YOUR_PUBLIC_KEY";       // 例: "aBcDeFgHiJkLmNoP"
+    const SERVICE_ID = "YOUR_SERVICE_ID";       // 例: "service_xxxxx"
+    const TEMPLATE_ID = "YOUR_TEMPLATE_ID";     // 例: "template_xxxxx"
 
-        <div id="composeView" class="compose-form" style="display: none;">
-            <h2><script>document.write(ICONS.send);</script> 新規作成・返信</h2>
-            
-            <input type="email" id="composeTo" class="compose-input" placeholder="宛先 (To)">
-            <input type="text" id="composeSubject" class="compose-input" placeholder="件名 (Subject)">
-            <textarea id="composeBody" class="compose-textarea" placeholder="ここに本文を入力してください..."></textarea>
-            
-            <div class="compose-actions">
-                <button onclick="hideComposeView()" style="background-color: #95a5a6; color: white;">キャンセル</button>
-                <button onclick="executeMailtoSend()" style="background-color: #0366d6;">
-                    <script>document.write(ICONS.send);</script> メールアプリを起動して送信
-                </button>
-            </div>
-            
-            <div class="compose-note">
-                ※「送信」を押すと、入力した内容がセットされた状態で、お使いのパソコン・スマホの標準メールアプリ（OutlookやiPhoneのメールアプリなど）が起動します。
-            </div>
-        </div>
-    </main>
-</div>
+    // EmailJSの初期化
+    (function(){
+      emailjs.init(PUBLIC_KEY);
+    })();
 
-<script>
-    const API_BASE = "https://api.mail.tm";
-    let currentEmail = "";
-    let authToken = "";
-    let checkInterval = null;
-    let emailsData = [];
-    
-    let savedAccounts = JSON.parse(localStorage.getItem('mailtm_accounts')) || [];
+    // フォーム送信時の処理
+    document.getElementById('contact-form').addEventListener('submit', function(event) {
+      // 画面がリロードされるのを防ぐ
+      event.preventDefault();
 
-    function generateRandomPassword() {
-        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let pwd = "";
-        for(let i=0; i<8; i++) { pwd += chars.charAt(Math.floor(Math.random() * chars.length)); }
-        return pwd;
-    }
+      if (PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
+        alert("EmailJSの初期設定（PUBLIC_KEYなど）が完了していません。コードを書き換えてください。");
+        return;
+      }
 
-    window.onload = () => {
-        document.getElementById('pwdInput').value = generateRandomPassword();
-        updateAccountSelect();
-        if (savedAccounts.length > 0) {
-            document.getElementById('accountSelect').value = savedAccounts[0].token;
-            switchAccount();
-        }
-    };
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerText = "送信中...";
 
-    function updateAccountSelect() {
-        const select = document.getElementById('accountSelect');
-        if (savedAccounts.length === 0) { select.style.display = "none"; return; }
-        select.style.display = "block";
-        select.innerHTML = '';
-        savedAccounts.forEach((acc) => {
-            const option = document.createElement('option');
-            option.value = acc.token; option.text = acc.address;
-            select.appendChild(option);
+      // 入力されたデータを取得
+      const templateParams = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        message: document.getElementById('message').value
+      };
+
+      // EmailJSを使って送信
+      emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+        .then(function(response) {
+            alert("お問い合わせを送信しました！");
+            document.getElementById('contact-form').reset(); // フォームを空にする
+        }, function(error) {
+            alert("送信に失敗しました。\nエラー詳細: " + JSON.stringify(error));
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.innerText = "送信する";
         });
-    }
-
-    function switchAccount() {
-        const select = document.getElementById('accountSelect');
-        authToken = select.value;
-        const selectedAcc = savedAccounts.find(a => a.token === authToken);
-        
-        if (selectedAcc) {
-            currentEmail = selectedAcc.address;
-            const savedPwd = selectedAcc.password || "不明（古いアカウント）";
-            
-            document.getElementById('accountInfo').style.display = "flex";
-            document.getElementById('emailDisplay').innerText = currentEmail;
-            document.getElementById('pwdDisplay').innerHTML = `${ICONS.key} PW: ${savedPwd}`;
-            document.getElementById('refreshBtn').style.display = "flex";
-            
-            document.getElementById('pwdInput').value = generateRandomPassword();
-            document.getElementById('searchInput').value = ''; 
-            
-            emailsData = [];
-            renderMailList();
-            showEmptyState();
-            
-            if(checkInterval) clearInterval(checkInterval);
-            checkInbox(true);
-            checkInterval = setInterval(checkInbox, 10000);
-        }
-    }
-
-    async function generateEmail() {
-        const btn = document.getElementById('genBtn');
-        const pwdInput = document.getElementById('pwdInput');
-        const errorDisplay = document.getElementById('errorDisplay');
-        
-        let password = pwdInput.value.trim();
-        if (password.length < 1) { password = generateRandomPassword(); pwdInput.value = password; }
-
-        btn.disabled = true; btn.innerHTML = `${ICONS.plus} 発行中...`; errorDisplay.innerHTML = "";
-
-        try {
-            const domainRes = await fetch(`${API_BASE}/domains`);
-            const domain = (await domainRes.json())['hydra:member'][0].domain;
-            const randomStr = Math.random().toString(36).substring(2, 12);
-            const address = `${randomStr}@${domain}`;
-
-            await fetch(`${API_BASE}/accounts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address, password }) });
-            const tokenRes = await fetch(`${API_BASE}/token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address, password }) });
-            const token = (await tokenRes.json()).token;
-
-            savedAccounts.unshift({ address, token, password });
-            localStorage.setItem('mailtm_accounts', JSON.stringify(savedAccounts));
-            
-            updateAccountSelect();
-            document.getElementById('accountSelect').value = token;
-            switchAccount();
-        } catch (error) {
-            errorDisplay.innerHTML = `${ICONS.alert} エラー: ${error.message}`;
-        } finally {
-            btn.disabled = false; btn.innerHTML = `${ICONS.plus} メアド発行`;
-        }
-    }
-
-    async function checkInbox(isManual = false) {
-        if (!authToken) return;
-        const statusText = document.getElementById('statusText');
-        statusText.innerHTML = `${ICONS.refresh} 確認中...`; statusText.style.color = "#0366d6";
-
-        try {
-            const res = await fetch(`${API_BASE}/messages`, { headers: { 'Authorization': `Bearer ${authToken}` }, cache: 'no-store' });
-            const data = await res.json();
-            emailsData = data['hydra:member'];
-            renderMailList();
-
-            const timeStr = new Date().toLocaleTimeString();
-            statusText.innerHTML = `最終更新: ${timeStr} (自動)`; statusText.style.color = "#6a737d";
-        } catch (error) {
-            statusText.innerHTML = `${ICONS.alert} 通信エラー`; statusText.style.color = "#d73a49";
-        }
-    }
-
-    function renderMailList() {
-        const listDiv = document.getElementById('mailList');
-        const searchInput = document.getElementById('searchInput').value.toLowerCase();
-        
-        const filteredEmails = emailsData.filter(msg => {
-            const subject = (msg.subject || "").toLowerCase();
-            const senderName = (msg.from.name || "").toLowerCase();
-            const senderAddress = (msg.from.address || "").toLowerCase();
-            return subject.includes(searchInput) || senderName.includes(searchInput) || senderAddress.includes(searchInput);
-        });
-
-        document.getElementById('mailCount').innerText = `(${filteredEmails.length}件)`;
-
-        if (filteredEmails.length === 0) { 
-            listDiv.innerHTML = `<div class="empty-state" style="font-size:13px; padding: 20px; text-align: center;">${emailsData.length === 0 ? '新着メールはありません' : '一致するメールが見つかりません'}</div>`;
-            return; 
-        }
-
-        listDiv.innerHTML = '';
-        filteredEmails.forEach(msg => {
-            const item = document.createElement('div');
-            item.className = 'mail-item';
-            item.onclick = () => readMessage(msg.id, item);
-            const senderName = msg.from.name ? `${msg.from.name} <${msg.from.address}>` : msg.from.address;
-            item.innerHTML = `<div class="mail-sender">${senderName}</div><div class="mail-subject">${msg.subject || '(件名なし)'}</div><div class="mail-date">${new Date(msg.createdAt).toLocaleString()}</div>`;
-            listDiv.appendChild(item);
-        });
-    }
-
-    // スマホ対応の画面切り替え
-    function setMobileReadingMode(isReading) {
-        const container = document.getElementById('mainContainer');
-        if(isReading) { container.classList.add('reading'); } 
-        else { container.classList.remove('reading'); }
-    }
-
-    function goBackToList() { showEmptyState(); }
-
-    function showEmptyState() {
-        setMobileReadingMode(false);
-        document.getElementById('emptyStateView').style.display = 'flex';
-        document.getElementById('readerView').style.display = 'none';
-        document.getElementById('composeView').style.display = 'none';
-        document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('selected'));
-    }
-
-    function showComposeView(replyTo = "", replySubject = "", replyBody = "") {
-        setMobileReadingMode(true);
-        document.getElementById('emptyStateView').style.display = 'none';
-        document.getElementById('readerView').style.display = 'none';
-        document.getElementById('composeView').style.display = 'block';
-        
-        document.getElementById('composeTo').value = replyTo;
-        document.getElementById('composeSubject').value = replySubject;
-        document.getElementById('composeBody').value = replyBody;
-    }
-
-    function hideComposeView() { goBackToList(); }
-
-    // ★ HTMLのみで送信するための関数（mailto呼び出し）
-    function executeMailtoSend() {
-        const to = document.getElementById('composeTo').value;
-        const subject = document.getElementById('composeSubject').value;
-        const body = document.getElementById('composeBody').value;
-        
-        if (!to) {
-            alert("宛先のメールアドレスを入力してください。");
-            return;
-        }
-
-        // 文字化けを防ぐエンコード処理
-        const encodedSubject = encodeURIComponent(subject);
-        const encodedBody = encodeURIComponent(body);
-        
-        // メーラーを起動
-        window.location.href = `mailto:${to}?subject=${encodedSubject}&body=${encodedBody}`;
-    }
-
-    async function readMessage(id, element) {
-        document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('selected'));
-        if (element) element.classList.add('selected');
-
-        setMobileReadingMode(true);
-        document.getElementById('emptyStateView').style.display = 'none';
-        document.getElementById('composeView').style.display = 'none';
-        const reader = document.getElementById('readerView');
-        reader.style.display = 'block';
-        reader.innerHTML = `<div class="empty-state">${ICONS.refresh} 読み込み中...</div>`;
-
-        try {
-            const res = await fetch(`${API_BASE}/messages/${id}`, { headers: { 'Authorization': `Bearer ${authToken}` }, cache: 'no-store' });
-            const detail = await res.json();
-            
-            const senderName = detail.from.name ? `${detail.from.name} &lt;${detail.from.address}&gt;` : detail.from.address;
-            const htmlBody = detail.html && detail.html.length > 0 ? detail.html[0] : '';
-            const textBody = detail.text || '(本文なし)';
-            const displayBody = htmlBody || `<div style="white-space: pre-wrap;">${textBody}</div>`;
-            const plainTextForTranslation = detail.text || "翻訳するテキストがありません。";
-            
-            const replySubject = detail.subject ? (detail.subject.startsWith('Re:') ? detail.subject : 'Re: ' + detail.subject) : 'Re:';
-            const replyBody = `\n\n--- 引用 ---\n${textBody}`;
-
-            reader.innerHTML = `
-                <div class="reader-header">
-                    <div class="reader-subject">
-                        ${detail.subject || '(件名なし)'}
-                        <div style="margin-top: 10px;">
-                            <button class="btn-translate" onclick="translateEmail(this, \`${encodeURIComponent(plainTextForTranslation)}\`)">${ICONS.globe} 日本語に翻訳</button>
-                            <button class="btn-compose" onclick="showComposeView('${detail.from.address}', '${replySubject.replace(/'/g, "\\'")}', \`${replyBody.replace(/`/g, "\\`")}\`)" style="margin-left: 10px; background-color: #0366d6;">${ICONS.send} 返信</button>
-                        </div>
-                    </div>
-                    <div class="reader-info">
-                        <strong>送信元:</strong> ${senderName}<br>
-                        <strong>宛先:</strong> ${currentEmail}<br>
-                        <strong>日時:</strong> ${new Date(detail.createdAt).toLocaleString()}
-                    </div>
-                </div>
-                <div class="reader-body">${displayBody}</div>
-                <div id="translatedBox" class="translated-box">
-                    <h4>${ICONS.globe} 翻訳結果</h4>
-                    <div id="translatedText" style="white-space: pre-wrap;"></div>
-                </div>
-            `;
-        } catch (error) {
-            reader.innerHTML = `<div class="empty-state" style="color: red;">${ICONS.alert} 読み込み失敗</div>`;
-        }
-    }
-
-    async function translateEmail(btn, encodedText) {
-        btn.disabled = true; btn.innerHTML = `${ICONS.refresh} 翻訳中...`;
-        const box = document.getElementById('translatedBox');
-        const textBox = document.getElementById('translatedText');
-        box.style.display = "block"; textBox.innerText = "翻訳データを取得しています...";
-
-        try {
-            const text = decodeURIComponent(encodedText).substring(0, 1000);
-            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|ja`);
-            const data = await res.json();
-            
-            if(data.responseData && data.responseData.translatedText) {
-                textBox.innerText = data.responseData.translatedText;
-                if(decodeURIComponent(encodedText).length > 1000) { textBox.innerText += "\n\n(※制限により、長文のため途中でカットされました)"; }
-            } else { textBox.innerText = "翻訳に失敗しました。"; }
-        } catch(e) { textBox.innerText = "通信エラーが発生しました。"; } 
-        finally { btn.innerHTML = `${ICONS.globe} 翻訳完了`; }
-    }
-</script>
+    });
+  </script>
 
 </body>
 </html>
